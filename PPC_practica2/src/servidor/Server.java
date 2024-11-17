@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -15,24 +18,18 @@ public class Server extends Thread{
 	private static int port = 4445;
 	
 	private DatagramSocket socket;
+	private InetAddress addr;
 	private boolean running;
 	private byte[] buf = new byte[256];
 	
-	public Server() { 
-		boolean r = true;
-		while(r) {
-			try {
-//					synchronized (r)) {
-//						socket = new DatagramSocket(port); 
-//						port++;			
-//						System.out.println(port);
-//					}
-				socket = new DatagramSocket(port);
-				r = false;
-			} catch (Exception e) {
-				System.err.println("Error en el establecimiento del puerto. Reintentando...\n");
-				e.printStackTrace();
-			}
+	public Server(){ 
+		try {
+			socket = new DatagramSocket(port, InetAddress.getLocalHost());
+//			socket.setBroadcast(true);
+			
+		} catch (Exception e) {
+			System.err.println("Error en el establecimiento del puerto. Reintentando...\n");
+			e.printStackTrace();
 		}
 	}
 	
@@ -41,8 +38,9 @@ public class Server extends Thread{
 		try {
 			running = true;
 			while (running) {
+				InetSocketAddress dircli = new InetSocketAddress(InetAddress.getLocalHost(), 4999);
 				buf = "hola, buenos dias".getBytes();
-				DatagramPacket packet = new DatagramPacket(buf, buf.length);
+				DatagramPacket packet = new DatagramPacket(buf, buf.length, dircli);
 //					socket.receive(packet);
 //					InetAddress address = packet.getAddress();
 //					int port = packet.getPort();
@@ -53,20 +51,16 @@ public class Server extends Thread{
 //						running = false;
 //						continue;
 //					}
-				sleep(2990); //duermo durante 3 segundos
 				socket.send(packet);
+				sleep(2990); //duermo durante 3 segundos
 			}
 		} 
 		
 		catch (Exception e) {
-			System.err.println("error en algo");
+			e.printStackTrace();
 		}
 			
 	socket.close();
-	}
-	public static void main(String[] args) {
-		Server serv = new Server();
-		serv.run();
 	}
 }
 
