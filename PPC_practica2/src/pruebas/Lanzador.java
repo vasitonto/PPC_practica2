@@ -4,11 +4,11 @@ import servidor.Server;
 
 public class Lanzador {
 	public static void main(String[] args) {
-		Server serv = new Server();
+//		Server serv = new Server();
 		Client cliente = new Client();
 		
 		cliente.start();
-		serv.start();
+//		serv.start();
 		
 		
 	}

@@ -1,4 +1,4 @@
-package servidor;
+	package servidor;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -16,51 +17,76 @@ import java.util.concurrent.locks.Lock;
 public class Server extends Thread{
 		
 	private static int port = 4445;
-	
 	private DatagramSocket socket;
 	private InetAddress addr;
 	private boolean running;
 	private byte[] buf = new byte[256];
 	
-	public Server(){ 
+	public Server(InetAddress inetAddr){ 
 		try {
-			socket = new DatagramSocket(port, InetAddress.getLocalHost());
+			socket = new DatagramSocket(port);
+			socket.setBroadcast(true);
+			this.addr = inetAddr;
 //			socket.setBroadcast(true);
 			
 		} catch (Exception e) {
-			System.err.println("Error en el establecimiento del puerto. Reintentando...\n");
+//			System.err.println("Error en el establecimiento del puerto. Reintentando...\n");
 			e.printStackTrace();
 		}
 	}
 	
-	public void run()
-	{
-		try {
-			running = true;
-			while (running) {
-				InetSocketAddress dircli = new InetSocketAddress(InetAddress.getLocalHost(), 4999);
+	public void enviaPaq() {
+		while (true) {
+			try {
 				buf = "hola, buenos dias".getBytes();
-				DatagramPacket packet = new DatagramPacket(buf, buf.length, dircli);
-//					socket.receive(packet);
-//					InetAddress address = packet.getAddress();
-//					int port = packet.getPort();
-//					packet = new DatagramPacket(buf, buf.length, address, port);
-//					String received = new String(packet.getData(), 0, packet.getLength());
-				
-//					if (received.equals("end")) {
-//						running = false;
-//						continue;
-//					}
+				DatagramPacket packet = new DatagramPacket(buf, buf.length, addr);
 				socket.send(packet);
-				sleep(2990); //duermo durante 3 segundos
+
+			} catch (IOException e) {
+				e.printStackTrace();
 			}
-		} 
-		
-		catch (Exception e) {
+		}
+	}
+	
+	public static void main(String[] args) {
+		InetAddress clientAddr;
+		try {
+			clientAddr = InetAddress.getByName("localhost");
+			Server server = new Server(clientAddr);
+			server.enviaPaq();
+		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-			
-	socket.close();
+		
+	}
+	public void run(){
+//		try {
+//			running = true;
+//			while (running) {
+//				System.out.println("server iniciado");
+//				InetSocketAddress dircli = new InetSocketAddress(InetAddress.getLocalHost(), 4999);
+//				buf = "hola, buenos dias".getBytes();
+//				DatagramPacket packet = new DatagramPacket(buf, buf.length, dircli);
+////					socket.receive(packet);
+////					InetAddress address = packet.getAddress();
+////					int port = packet.getPort();
+////					packet = new DatagramPacket(buf, buf.length, address, port);
+////					String received = new String(packet.getData(), 0, packet.getLength());
+//				
+////					if (received.equals("end")) {
+////						running = false;
+////						continue;
+////					}
+//				socket.send(packet);
+//				sleep(2990); //duermo durante 3 segundos
+//			}
+//		} 
+//		
+//		catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//			
+//	socket.close();
 	}
 }
 
