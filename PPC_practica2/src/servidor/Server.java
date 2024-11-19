@@ -18,15 +18,13 @@ public class Server extends Thread{
 		
 	private static int port = 4445;
 	private DatagramSocket socket;
-	private InetAddress addr;
 	private boolean running;
 	private byte[] buf = new byte[256];
 	
-	public Server(InetAddress inetAddr){ 
+	public Server(){ 
 		try {
 			socket = new DatagramSocket(port);
 			socket.setBroadcast(true);
-			this.addr = inetAddr;
 //			socket.setBroadcast(true);
 			
 		} catch (Exception e) {
@@ -35,13 +33,12 @@ public class Server extends Thread{
 		}
 	}
 	
-	public void enviaPaq() {
+	public void enviaPaq(InetAddress destAddr, int destPort) {
 		while (true) {
 			try {
 				buf = "hola, buenos dias".getBytes();
-				DatagramPacket packet = new DatagramPacket(buf, buf.length, addr);
+				DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddr, destPort);
 				socket.send(packet);
-
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -52,8 +49,9 @@ public class Server extends Thread{
 		InetAddress clientAddr;
 		try {
 			clientAddr = InetAddress.getByName("localhost");
-			Server server = new Server(clientAddr);
-			server.enviaPaq();
+			int clientPort = 4999;
+			Server server = new Server();
+			server.enviaPaq(clientAddr, clientPort);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}

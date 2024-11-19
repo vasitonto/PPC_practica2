@@ -53,8 +53,9 @@ public class Client extends Thread{
     			InetAddress serverAddress = pak.getAddress();
     			String msg = new String(pak.getData(), 0, pak.getLength());
     			System.out.println(msg);
+    			sleep(2990);
 				
-			} catch (IOException e) {
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 				break;
 			}
