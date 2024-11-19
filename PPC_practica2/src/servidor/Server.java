@@ -1,4 +1,4 @@
-	package servidor;
+package servidor;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -16,47 +16,114 @@ import java.util.concurrent.locks.Lock;
 
 public class Server extends Thread{
 		
-	private static int port = 4445;
+	private static int myPort = 4445; // puerto en el que el servidor va a recibir los mensajes
+	private static final int BCPORT = 4999; // broadcast port
+	private InetSocketAddress BCADDR;
 	private DatagramSocket socket;
-	private boolean running;
 	private byte[] buf = new byte[256];
 	
 	public Server(){ 
 		try {
-			socket = new DatagramSocket(port);
+			socket = new DatagramSocket(myPort);
 			socket.setBroadcast(true);
-//			socket.setBroadcast(true);
+			this.BCADDR = new InetSocketAddress(InetAddress.getByName("192.168.1.255"), BCPORT);
 			
-		} catch (Exception e) {
+		} catch (SocketException | UnknownHostException e) {
 //			System.err.println("Error en el establecimiento del puerto. Reintentando...\n");
 			e.printStackTrace();
 		}
 	}
 	
-	public void enviaPaq(InetAddress destAddr, int destPort) {
-		while (true) {
+	 private void broadcast(){
+	        Thread t = new Thread(new Runnable() {           
+	            public void run() { 
+	    			for(int i = 0; i < 3; i++) {
+//	    			while (true) {
+    					try {
+    						buf = "hola, buenos dias".getBytes();
+    						DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+    						socket.send(packet);
+    						sleep(2990);
+    					} catch (IOException | InterruptedException e) {
+    						e.printStackTrace();
+    					}
+    				}
+	            } 
+	        });
+	        t.start();
+	    }
+	 
+		private void respond(){
+			Thread t = new Thread(new Runnable() {           
+				public void run() { 
+					for(int i = 0; i < 3; i++) {
+//	    			while (true) {
+	 					try {
+	 						buf = "me cago encima".getBytes();
+	 						DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+	 						socket.send(packet);
+	 						sleep(2990);
+	 					} catch (IOException | InterruptedException e) {
+	 						e.printStackTrace();
+	 					}
+	 				}
+				}
+	        });
+		        t.start();
+	    }
+	
+	private Runnable broadcaster = new Runnable() {
+		@Override
+		public void run() {
+			for(int i = 0; i < 3; i++) {
+//			while (true) {
+				try {
+					buf = "hola, buenos dias".getBytes();
+					System.out.println("Broadcasting: " + buf.toString());
+					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+					socket.send(packet);
+					sleep(2990);
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	};
+	
+	private Runnable responder = new Runnable() {
+		public void run() {
+			while(true) {
+				try {
+					buf = "me cago encima".getBytes();
+					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+					socket.send(packet);
+					sleep(2990);
+				} catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	};
+	
+	private void enviarPaq() {
+		while(true) {
 			try {
-				buf = "hola, buenos dias".getBytes();
-				DatagramPacket packet = new DatagramPacket(buf, buf.length, destAddr, destPort);
+				buf = "me cago encima".getBytes();
+				DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
 				socket.send(packet);
-			} catch (IOException e) {
+				sleep(2990);
+			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 	
 	public static void main(String[] args) {
-		InetAddress clientAddr;
-		try {
-			clientAddr = InetAddress.getByName("localhost");
-			int clientPort = 4999;
 			Server server = new Server();
-			server.enviaPaq(clientAddr, clientPort);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		
+			ServerBroadcaster broadcaster = new ServerBroadcaster();
+			broadcaster.run();
 	}
+	
 	public void run(){
 //		try {
 //			running = true;

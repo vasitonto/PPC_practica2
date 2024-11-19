@@ -13,7 +13,7 @@ public class Client extends Thread{
 		
 //	private Runnable javi;
 //	private Thread pedro;
-	private static int portCli = 4999;
+	private static int myPort = 4999;
 	private static int portServ = 4445;
 	private DatagramPacket packMulticast;
 	private DatagramSocket socket;
@@ -21,7 +21,7 @@ public class Client extends Thread{
  
     public Client() {
     	try {
-			this.socket = new DatagramSocket(portCli);
+			this.socket = new DatagramSocket(myPort);
 		} catch (SocketException e) {
 			
 			e.printStackTrace();
@@ -53,9 +53,8 @@ public class Client extends Thread{
     			InetAddress serverAddress = pak.getAddress();
     			String msg = new String(pak.getData(), 0, pak.getLength());
     			System.out.println(msg);
-    			sleep(2990);
 				
-			} catch (IOException | InterruptedException e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 				break;
 			}
