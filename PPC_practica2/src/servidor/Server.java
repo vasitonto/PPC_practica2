@@ -26,7 +26,7 @@ public class Server extends Thread{
 		try {
 			socket = new DatagramSocket(myPort);
 			socket.setBroadcast(true);
-			this.BCADDR = new InetSocketAddress(InetAddress.getByName("192.168.1.255"), BCPORT);
+			this.BCADDR = new InetSocketAddress(InetAddress.getByName("255.255.255.255"), BCPORT);
 			
 		} catch (SocketException | UnknownHostException e) {
 //			System.err.println("Error en el establecimiento del puerto. Reintentando...\n");
@@ -72,38 +72,38 @@ public class Server extends Thread{
 		        t.start();
 	    }
 	
-	private Runnable broadcaster = new Runnable() {
-		@Override
-		public void run() {
-			for(int i = 0; i < 3; i++) {
-//			while (true) {
-				try {
-					buf = "hola, buenos dias".getBytes();
-					System.out.println("Broadcasting: " + buf.toString());
-					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
-					socket.send(packet);
-					sleep(2990);
-				} catch (IOException | InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	};
-	
-	private Runnable responder = new Runnable() {
-		public void run() {
-			while(true) {
-				try {
-					buf = "me cago encima".getBytes();
-					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
-					socket.send(packet);
-					sleep(2990);
-				} catch (IOException | InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	};
+//	private Runnable broadcaster = new Runnable() {
+//		@Override
+//		public void run() {
+//			for(int i = 0; i < 3; i++) {
+////			while (true) {
+//				try {
+//					buf = "hola, buenos dias".getBytes();
+//					System.out.println("Broadcasting: " + buf.toString());
+//					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+//					socket.send(packet);
+//					sleep(2990);
+//				} catch (IOException | InterruptedException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//		}
+//	};
+//	
+//	private Runnable responder = new Runnable() {
+//		public void run() {
+//			while(true) {
+//				try {
+//					buf = "me cago encima".getBytes();
+//					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+//					socket.send(packet);
+//					sleep(2990);
+//				} catch (IOException | InterruptedException e) {
+//					e.printStackTrace();
+//				}
+//			}
+//		}
+//	};
 	
 	private void enviarPaq() {
 		while(true) {
@@ -120,8 +120,11 @@ public class Server extends Thread{
 	
 	public static void main(String[] args) {
 			Server server = new Server();
-			ServerBroadcaster broadcaster = new ServerBroadcaster();
-			broadcaster.run();
+			ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.socket);
+			ServerQueryResponder responder = new ServerQueryResponder(server.BCADDR.getAddress(), 4445);
+			broadcaster.start();
+			responder.start();
+			
 	}
 	
 	public void run(){
