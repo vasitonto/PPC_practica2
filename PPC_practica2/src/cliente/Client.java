@@ -36,6 +36,7 @@ public class Client extends Thread{
     			System.out.println(msg);
     			buf = "mensaje recibido".getBytes();
     			DatagramPacket resp = new DatagramPacket(buf, buf.length, pak.getSocketAddress());
+    			System.out.println(pak.getSocketAddress());
     			socket.send(resp);
 				
 			} catch (IOException e) {

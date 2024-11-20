@@ -10,7 +10,6 @@ import java.net.UnknownHostException;
 
 public class ServerBroadcaster extends Thread{
 	
-	private static final int BCPORT = 4999; // broadcast port
 	private InetSocketAddress BCADDR;
 	private DatagramSocket socket;
 	private byte[] buf = new byte[256];
