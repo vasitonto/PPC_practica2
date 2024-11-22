@@ -11,25 +11,22 @@ public class ServerQueryResponder extends Thread {
 	private DatagramSocket socket;
 	private byte[] buf = new byte[256];
 	
-	public ServerQueryResponder(InetAddress dir, int port) {
-		try {
-			this.socket = new DatagramSocket(port, dir);
-		}
-		catch (SocketException e) {
-			e.printStackTrace();
-			System.out.println("error en el constructor"); //TODO DELETE THIS
-		}
+//	public ServerQueryResponder(InetAddress dir, int port) {
+	public ServerQueryResponder(DatagramSocket socket) {
+		this.socket = socket;
 	}
 	
 	public void run() {
-		try {
-			DatagramPacket query = new DatagramPacket(buf, buf.length);
-			socket.receive(query);
-			System.out.println("Recibido: " + query.getData().toString());
-		}
-		catch(IOException e) {
-			System.out.println("error en el run"); //TODO DELETE THIS
-			e.printStackTrace();
+		while(true) {
+			try {
+				DatagramPacket query = new DatagramPacket(buf, buf.length);
+				socket.receive(query);
+				System.out.println("Recibido: " + new String(query.getData(), 0, query.getLength()));
+			}
+			catch(IOException e) {
+				System.out.println("error en el run"); //TODO DELETE THIS
+				e.printStackTrace();
+			}
 		}
 	}
 }

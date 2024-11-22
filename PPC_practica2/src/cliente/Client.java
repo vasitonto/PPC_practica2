@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 
@@ -27,6 +28,23 @@ public class Client extends Thread{
 		}
     }
     
+    private Thread jose = new Thread(new Runnable() {
+		private byte[] buf2 = new byte[256];
+    	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
+		@Override
+		public void run() {
+			while(true) {
+				try {
+					socket.receive(recvPak);
+					System.out.println("sexo\n");
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}				
+			}			
+		};
+	});
+    
     public void recibePaquete() {
     	while (true) {
     		try {
@@ -34,10 +52,6 @@ public class Client extends Thread{
     			socket.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
     			System.out.println(msg);
-    			buf = "mensaje recibido".getBytes();
-    			DatagramPacket resp = new DatagramPacket(buf, buf.length, pak.getSocketAddress());
-    			System.out.println(pak.getSocketAddress());
-    			socket.send(resp);
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -46,9 +60,29 @@ public class Client extends Thread{
 		}	
     }
     
+    public void enviaPaquete(String msg) {
+    	byte [] bufResp = msg.getBytes();
+    	
+		DatagramPacket resp;
+		try {
+			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), 4445);
+			for(int i = 0; i <10; i++) { 
+				socket.send(resp); 
+				sleep(3000); 
+				System.out.println("bloblo");
+			}
+			
+		} catch (IOException | InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+    
     public static void main(String[] args) {
 		Client cli = new Client();
-		cli.recibePaquete();
+//		cli.recibePaquete();
+		cli.jose.start();
+		cli.enviaPaquete("mensaje del cliente\n");
 	}
 }
 

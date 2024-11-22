@@ -18,7 +18,7 @@ public class Server extends Thread{
 	
 	//TODO hacer el sistema de forma que se puedan lanzar varios servidores
 	// es decir, que el nº del puerto vaya cambiando
-	private static final int BCSocketPort = 4445; // puerto en el que el servidor va a recibir los mensajes
+	private static final int BCSocketPort = 4445; // puerto desde el cual se enviarán los mensajes bcast
 	private static final int BCPORT = 4999; // broadcast port
 	private static final int RCVPORT = 4446;
 	private InetSocketAddress BCADDR;
@@ -42,14 +42,13 @@ public class Server extends Thread{
 	
 	public static void main(String[] args) {
 		Server server = new Server();
-		server.start();	
+		ServerQueryResponder responder = new ServerQueryResponder(server.BCsocket);
+		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCsocket);
+		responder.start();
+		broadcaster.start();
 	}
 	
 	public void run(Server server){
-		ServerBroadcaster broadcaster = new ServerBroadcaster(this.BCADDR, this.BCsocket);
-//		ServerQueryResponder responder = new ServerQueryResponder(server.BCADDR.getAddress(), 4445);
-		broadcaster.start();
-//		responder.start();
 	}
 	
 //	private Runnable responder = new Runnable() {
