@@ -19,8 +19,8 @@ public class Server extends Thread{
 	//TODO hacer el sistema de forma que se puedan lanzar varios servidores
 	// es decir, que el nº del puerto vaya cambiando
 	private static final int BCSocketPort = 4445; // puerto desde el cual se enviarán los mensajes bcast
-	private static final int BCPORT = 4999; // broadcast port
 	private static final int RCVPORT = 4446;
+	private static final int BCPORT = 4999; // puerto en el que escucha el cliente
 	private InetSocketAddress BCADDR;
 	private DatagramSocket BCsocket;
 	private DatagramSocket RCVsocket;

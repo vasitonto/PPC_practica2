@@ -14,15 +14,18 @@ public class Client extends Thread{
 		
 //	private Runnable javi;
 //	private Thread pedro;
-	private static int myPort = 4999;
+	private static int portListen = 4999;
+	private static int portCtrl = 5000;
 	private static int portServ = 4445; //TODO quitar esto para sacar el puerto de los mensajes
-	private DatagramSocket socket;
+	private DatagramSocket socketListen; // socket para escuchar broadcasts
+	private DatagramSocket socketCtrl; // socket para enviar msg de control y recibirlos
 	private byte[] buf = new byte[256];
  
     public Client() {
     	try {
     		//TODO implementar el aumento del puerto (static)
-			this.socket = new DatagramSocket(myPort);
+			this.socketListen = new DatagramSocket(portListen);
+			this.socketCtrl = new DatagramSocket(portCtrl);
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -35,8 +38,9 @@ public class Client extends Thread{
 		public void run() {
 			while(true) {
 				try {
-					socket.receive(recvPak);
-					System.out.println("sexo\n");
+					socketListen.receive(recvPak);
+					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
+					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -49,7 +53,7 @@ public class Client extends Thread{
     	while (true) {
     		try {
     			DatagramPacket pak = new DatagramPacket(buf, buf.length);
-    			socket.receive(pak);
+    			socketCtrl.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
     			System.out.println(msg);
 				
@@ -67,9 +71,8 @@ public class Client extends Thread{
 		try {
 			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), 4445);
 			for(int i = 0; i <10; i++) { 
-				socket.send(resp); 
+				socketCtrl.send(resp); 
 				sleep(3000); 
-				System.out.println("bloblo");
 			}
 			
 		} catch (IOException | InterruptedException e) {
