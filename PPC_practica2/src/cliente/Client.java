@@ -1,5 +1,6 @@
 package cliente;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -42,40 +43,7 @@ public class Client extends Thread{
     		}
     	}
     }
-    
-    private Thread jose = new Thread(new Runnable() {
-		private byte[] buf2 = new byte[256];
-    	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
-		@Override
-		public void run() {
-			while(true) {
-				try {
-					socketListen.receive(recvPak);
-					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
-					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}				
-			}			
-		};
-	});
-    
-    private int terminalCliente() {
-    	while(true) {
-    		Scanner lector = new Scanner(System.in);
-    		System.out.println("Bienvenido a la terminal del cliente. Los comandos son los siguientes:\nlisten: escucha los mensajes de broadcast\nexit: termina el programa");
-    		String command = lector.nextLine();
-    		switch (command) {
-    			case "exit":
-    				return 0;
-    			case "listen":
-    				recibePaquete();
-    			default:
-    				System.out.println("No se esperaba ese comando, inténtalo de nuevo...\n");
-    				break;
-    		}
-		}
-    }
+        
     
     
     public void recibePaquete() {
@@ -84,8 +52,7 @@ public class Client extends Thread{
     			DatagramPacket pak = new DatagramPacket(buf, buf.length);
     			socketListen.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
-    			System.out.println(msg);
-				
+    			System.out.println(msg);				
 			} 
     		catch (IOException e) {
 				e.printStackTrace();
@@ -97,6 +64,24 @@ public class Client extends Thread{
 //    		}
 		}	
     }
+    
+    private Thread listenThread = new Thread(new Runnable() {
+		private byte[] buf2 = new byte[256];
+    	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
+		@Override
+		public void run() {
+			while(true) {
+				try {
+					socketListen.receive(recvPak);
+					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
+					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
+				} 
+				catch (IOException e) {
+					e.printStackTrace();
+				}
+			}			
+		};
+	});
     
     public void enviaPaquete(String msg) {
     	byte [] bufResp = msg.getBytes();
@@ -113,6 +98,34 @@ public class Client extends Thread{
 			e.printStackTrace();
 		}
 	}
+    
+    private int terminalCliente() {
+    	boolean print = true;
+    	while(true) {
+    		Scanner lector = new Scanner(System.in);
+    		if(print) {
+    			System.out.println("Bienvenido a la terminal del cliente. Los comandos son los siguientes:\nlisten: escucha los mensajes de broadcast\nexit: termina el programa");    			
+    		}
+    		String command = lector.nextLine();
+    		switch (command) {
+    		case "exit":
+    			lector.close();
+    			return 0;
+    		case "listen":
+//    			recibePaquete();
+    			this.listenThread.run();
+    			print = false;
+    			break;
+    		case "stop":
+    			this.listenThread.interrupt();
+    			break;
+    		default:
+    			System.out.println("No se esperaba ese comando, inténtalo de nuevo...\n");
+    			break;
+    		}
+    		lector.close();
+    	}
+    }
     
     public static void main(String[] args) {
 		Client cli = new Client();
