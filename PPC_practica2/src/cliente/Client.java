@@ -3,32 +3,44 @@ package cliente;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MulticastSocket;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Scanner;
 
 public class Client extends Thread{
 		
 //	private Runnable javi;
 //	private Thread pedro;
-	private static int portListen = 4999;
-	private static int portCtrl = 5000;
-	private static int portServ = 4445; //TODO quitar esto para sacar el puerto de los mensajes
-	private DatagramSocket socketListen; // socket para escuchar broadcasts
+	private static final int portListen = 4999;
+	private static final int portCtrl = 5999;
+	private static int portServ = 4445; 
+	//TODO quitar esto para sacar el puerto de los mensajes
+	private static final String grupoMulticast = "224.48.75.1";
+	private MulticastSocket socketListen; // socket para escuchar broadcasts
 	private DatagramSocket socketCtrl; // socket para enviar msg de control y recibirlos
+	private InetSocketAddress BCADDR;
 	private byte[] buf = new byte[256];
  
     public Client() {
-    	try {
-    		//TODO implementar el aumento del puerto (static)
-			this.socketListen = new DatagramSocket(portListen);
-			this.socketCtrl = new DatagramSocket(portCtrl);
-		} catch (SocketException e) {
-			e.printStackTrace();
-		}
+    	int puerto1 = this.portListen;
+//    	int puerto2 = this.portCtrl;
+    	// Mediante este bucle se pueden lanzar varios clientes
+    	while(true) {
+    		try {
+    			this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), portListen);
+    			this.socketListen = new MulticastSocket(puerto1);
+//    			this.socketCtrl = new DatagramSocket(puerto2);
+    			break;
+    		} catch (IOException e) {
+    			puerto1++;
+//    			puerto2++;
+    		}
+    	}
     }
     
     private Thread jose = new Thread(new Runnable() {
@@ -42,25 +54,47 @@ public class Client extends Thread{
 					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
 					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}				
 			}			
 		};
 	});
     
+    private int terminalCliente() {
+    	while(true) {
+    		Scanner lector = new Scanner(System.in);
+    		System.out.println("Bienvenido a la terminal del cliente. Los comandos son los siguientes:\nlisten: escucha los mensajes de broadcast\nexit: termina el programa");
+    		String command = lector.nextLine();
+    		switch (command) {
+    			case "exit":
+    				return 0;
+    			case "listen":
+    				recibePaquete();
+    			default:
+    				System.out.println("No se esperaba ese comando, inténtalo de nuevo...\n");
+    				break;
+    		}
+		}
+    }
+    
+    
     public void recibePaquete() {
     	while (true) {
     		try {
     			DatagramPacket pak = new DatagramPacket(buf, buf.length);
-    			socketCtrl.receive(pak);
+    			socketListen.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
     			System.out.println(msg);
 				
-			} catch (IOException e) {
+			} 
+    		catch (IOException e) {
 				e.printStackTrace();
 				break;
 			}
+    		//TODO meter esto en un thread para poder interrumpirlo por terminal
+//    		catch (InterruptedException e) {
+//    			
+//    		}
 		}	
     }
     
@@ -76,16 +110,24 @@ public class Client extends Thread{
 			}
 			
 		} catch (IOException | InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
     
     public static void main(String[] args) {
 		Client cli = new Client();
+		try {
+			cli.socketListen.joinGroup(cli.BCADDR, NetworkInterface.getByName(grupoMulticast));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+//		System.out.println("escuchando en " + cli.socketListen.getLocalPort() + ", controlando en " + cli.socketCtrl.getLocalPort());
+		if(cli.terminalCliente() == 0) {
+			System.exit(0);
+		}
 //		cli.recibePaquete();
-		cli.jose.start();
-		cli.enviaPaquete("mensaje del cliente\n");
+//		cli.jose.start();
+//		cli.enviaPaquete("mensaje del cliente\n");
 	}
 }
 
