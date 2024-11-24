@@ -9,7 +9,6 @@ import java.net.SocketException;
 
 public class ServerQueryResponder extends Thread {
 	private DatagramSocket socket;
-	private byte[] buf = new byte[256];
 	
 //	public ServerQueryResponder(InetAddress dir, int port) {
 	public ServerQueryResponder(DatagramSocket socket) {
@@ -19,12 +18,17 @@ public class ServerQueryResponder extends Thread {
 	public void run() {
 		while(true) {
 			try {
+				byte[] buf = new byte[256];
 				DatagramPacket query = new DatagramPacket(buf, buf.length);
 				socket.receive(query);
 				System.out.println("Recibido: " + new String(query.getData(), 0, query.getLength()));
+				// hacer control del mensaje y tal
+				byte[] buf2 = new byte[256];
+				buf2 = "el server recibió el mensaje de control".getBytes();
+				query = new DatagramPacket(buf2, buf2.length, query.getSocketAddress());
+				socket.send(query);
 			}
 			catch(IOException e) {
-				System.out.println("error en el run"); //TODO DELETE THIS
 				e.printStackTrace();
 			}
 		}

@@ -27,19 +27,13 @@ public class ServerBroadcaster extends Thread{
 	
 	public void run() {
 //		for(int i = 0; i < 3; i++) {
-		System.out.println("hilo corriendo"); 
 		while (true) {
 			try {
 				String fecha = LocalDateTime.now().toString();
-				System.out.println(fecha.substring(11, 22));
-				buf = "hola, buenos dias".getBytes();
+				buf = fecha.substring(11, 22).getBytes();
 				DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
 				socket.send(packet);
-				System.out.println("enviando mensaje");
-				sleep(2990);
-				buf = "ahora cambio el mensaje".getBytes();
-				packet = new DatagramPacket(buf, buf.length, BCADDR);
-				socket.send(packet);
+				sleep(3000);
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
 			}

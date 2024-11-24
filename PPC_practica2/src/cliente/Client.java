@@ -30,45 +30,45 @@ public class Client extends Thread{
  
     public Client() {
     	int puerto1 = this.portListen;
-//    	int puerto2 = this.portCtrl;
+    	int puerto2 = this.portCtrl;
     	// Mediante este bucle se pueden lanzar varios clientes
     	while(true) {
     		try {
     			this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), portListen);
     			this.socketListen = new MulticastSocket(puerto1);
-//    			this.socketCtrl = new DatagramSocket(puerto2);
+    			this.socketCtrl = new DatagramSocket(puerto2);
     			break;
     		} catch (IOException e) {
     			puerto1++;
-//    			puerto2++;
+    			puerto2++;
     		}
     	}
     }
         
     
-    
     public void recibePaquete() {
-    	while (true) {
-    		try {
+//    	while (true) {
+
+    	try {
+	    	socketListen.joinGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
+	    	for(int i = 0; i < 4; i++) {
     			DatagramPacket pak = new DatagramPacket(buf, buf.length);
     			socketListen.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
-    			System.out.println(msg);				
+    			System.out.println(msg);
 			} 
-    		catch (IOException e) {
-				e.printStackTrace();
-				break;
-			}
-    		//TODO meter esto en un thread para poder interrumpirlo por terminal
-//    		catch (InterruptedException e) {
-//    			
-//    		}
-		}	
+	    	socketListen.leaveGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
+    	}
+    	catch (IOException e) {
+    		e.printStackTrace();
+    	}
     }
     
+//TODO investigar como interrumpir este hilo o la funcion de arriba    
     private Thread listenThread = new Thread(new Runnable() {
 		private byte[] buf2 = new byte[256];
     	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
+    	
 		@Override
 		public void run() {
 			for(int i = 0; i < 5; i++){
@@ -86,17 +86,16 @@ public class Client extends Thread{
 		};
 	});
     
-    public void enviaPaquete(String msg) {
+    public void enviaControl(String msg) {
     	byte [] bufResp = msg.getBytes();
     	
 		DatagramPacket resp;
 		try {
-			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), 4445);
-			for(int i = 0; i <10; i++) { 
-				socketCtrl.send(resp); 
-				sleep(3000); 
-			}
-			
+			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), 4446);
+			socketCtrl.send(resp); 
+			sleep(3000);
+			socketCtrl.receive(resp);
+			System.out.println(new String(resp.getData(), 0, resp.getLength()));
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -104,10 +103,11 @@ public class Client extends Thread{
     
     private int terminalCliente() {
     	boolean print = true;
+    	System.out.println("Teclea \"help\" para ver la lista de comandos.");
     	while(true) {
     		BufferedReader lector = new BufferedReader(new InputStreamReader(System.in));
     		if(print) {
-    			System.out.println("Esperando input del cliente: ");    			
+    			System.out.println("Esperando input...: ");    			
     		}
     		try {
     			String command = lector.readLine();
@@ -115,15 +115,22 @@ public class Client extends Thread{
     			case "exit":
     				return 0;
     			case "listen":
-//    			recibePaquete();
-    				this.listenThread.run();
+    				recibePaquete();
+//    				this.listenThread.run();
 //    				print = false;
     				break;
     			case "stop":
-    				this.listenThread.interrupt();
+//    				this.listenThread.interrupt();
+    				break;
+    			case "control":
+    				enviaControl("mensaje de control");
+    				break;
+    			case "help":
+    				System.out.println("exit - termina el programa.\nlisten - escucha mensajes de los servidores\n"
+    						+ "control - envía mensajes de control al servidor\nhelp - muestra esta ayuda");
     				break;
     			default:
-    				System.out.println("No se esperaba ese comando, inténtalo de nuevo...\n");
+    				System.out.println("No se esperaba esa palabra, inténtalo de nuevo...");
     				break;
     			}
     		}
@@ -135,18 +142,16 @@ public class Client extends Thread{
     
     public static void main(String[] args) {
 		Client cli = new Client();
-		try {
-			cli.socketListen.joinGroup(cli.BCADDR, NetworkInterface.getByName(grupoMulticast));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			cli.socketListen.joinGroup(cli.BCADDR, NetworkInterface.getByName(grupoMulticast));
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 //		System.out.println("escuchando en " + cli.socketListen.getLocalPort() + ", controlando en " + cli.socketCtrl.getLocalPort());
 		if(cli.terminalCliente() == 0) {
 			System.exit(0);
 		}
 //		cli.recibePaquete();
-//		cli.jose.start();
-//		cli.enviaPaquete("mensaje del cliente\n");
 	}
 }
 
