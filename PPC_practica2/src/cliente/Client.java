@@ -2,6 +2,7 @@ package cliente;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -70,7 +71,8 @@ public class Client extends Thread{
     	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
 		@Override
 		public void run() {
-			while(true) {
+			for(int i = 0; i < 5; i++){
+//			while(true) {
 				try {
 					socketListen.receive(recvPak);
 					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
@@ -78,6 +80,7 @@ public class Client extends Thread{
 				} 
 				catch (IOException e) {
 					e.printStackTrace();
+					break;
 				}
 			}			
 		};
@@ -102,28 +105,31 @@ public class Client extends Thread{
     private int terminalCliente() {
     	boolean print = true;
     	while(true) {
-    		Scanner lector = new Scanner(System.in);
+    		BufferedReader lector = new BufferedReader(new InputStreamReader(System.in));
     		if(print) {
-    			System.out.println("Bienvenido a la terminal del cliente. Los comandos son los siguientes:\nlisten: escucha los mensajes de broadcast\nexit: termina el programa");    			
+    			System.out.println("Esperando input del cliente: ");    			
     		}
-    		String command = lector.nextLine();
-    		switch (command) {
-    		case "exit":
-    			lector.close();
-    			return 0;
-    		case "listen":
+    		try {
+    			String command = lector.readLine();
+    			switch (command) {
+    			case "exit":
+    				return 0;
+    			case "listen":
 //    			recibePaquete();
-    			this.listenThread.run();
-    			print = false;
-    			break;
-    		case "stop":
-    			this.listenThread.interrupt();
-    			break;
-    		default:
-    			System.out.println("No se esperaba ese comando, inténtalo de nuevo...\n");
-    			break;
+    				this.listenThread.run();
+//    				print = false;
+    				break;
+    			case "stop":
+    				this.listenThread.interrupt();
+    				break;
+    			default:
+    				System.out.println("No se esperaba ese comando, inténtalo de nuevo...\n");
+    				break;
+    			}
     		}
-    		lector.close();
+    		catch(IOException e){
+    			e.printStackTrace();
+    		}
     	}
     }
     

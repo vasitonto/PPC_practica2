@@ -7,6 +7,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.net.MulticastSocket;
 
 public class ServerBroadcaster extends Thread{
@@ -22,9 +27,11 @@ public class ServerBroadcaster extends Thread{
 	
 	public void run() {
 //		for(int i = 0; i < 3; i++) {
-		System.out.println("hilo corriendo");
+		System.out.println("hilo corriendo"); 
 		while (true) {
 			try {
+				String fecha = LocalDateTime.now().toString();
+				System.out.println(fecha.substring(11, 22));
 				buf = "hola, buenos dias".getBytes();
 				DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
 				socket.send(packet);
