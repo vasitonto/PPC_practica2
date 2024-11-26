@@ -19,6 +19,7 @@ public class ServerBroadcaster extends Thread{
 	private InetSocketAddress BCADDR;
 	private DatagramSocket socket;
 	private byte[] buf = new byte[256];
+	private DOMParser parser = new DOMParser();
 	
 	public ServerBroadcaster(InetSocketAddress dir, MulticastSocket socket) {
 		this.BCADDR = dir;

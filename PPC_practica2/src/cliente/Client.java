@@ -29,13 +29,14 @@ public class Client extends Thread{
 	private byte[] buf = new byte[256];
  
     public Client() {
+    	
     	int puerto1 = this.portListen;
     	int puerto2 = this.portCtrl;
     	// Mediante este bucle se pueden lanzar varios clientes
     	while(true) {
     		try {
     			this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), portListen);
-    			this.socketListen = new MulticastSocket(puerto1);
+    			this.socketListen = new MulticastSocket(portListen);
     			this.socketCtrl = new DatagramSocket(puerto2);
     			break;
     		} catch (IOException e) {
