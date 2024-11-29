@@ -1,18 +1,19 @@
 package cliente;
 
-import java.io.BufferedReader;
+import java.io.BufferedReader; 
 import java.io.IOException;
 import java.io.InputStreamReader;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Scanner;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 public class Client extends Thread{
 		
@@ -49,20 +50,26 @@ public class Client extends Thread{
     
     public void recibePaquete() {
 //    	while (true) {
-
     	try {
 	    	socketListen.joinGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
 	    	for(int i = 0; i < 4; i++) {
     			DatagramPacket pak = new DatagramPacket(buf, buf.length);
     			socketListen.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
-    			System.out.println(msg);
+    			Document reportDoc = ClientParser.loadXMLFromString(msg);
+    			NodeList reportNodeList = reportDoc.getElementsByTagName("report");
+    			Element reportElement = reportDoc.getDocumentElement();
+    			
+    			System.out.println(reportElement.getNodeName());
 			} 
 	    	socketListen.leaveGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
     	}
     	catch (IOException e) {
     		e.printStackTrace();
-    	}
+    	} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
     }
     
 //TODO investigar como interrumpir este hilo o la funcion de arriba    

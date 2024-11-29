@@ -1,17 +1,11 @@
 package servidor;
 
-import java.io.IOException; 
+import java.io.IOException;  
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import org.w3c.dom.Document;
 import java.net.MulticastSocket;
 
 public class ServerBroadcaster extends Thread{
@@ -19,7 +13,6 @@ public class ServerBroadcaster extends Thread{
 	private InetSocketAddress BCADDR;
 	private DatagramSocket socket;
 	private byte[] buf = new byte[256];
-	private DOMParser parser = new DOMParser();
 	
 	public ServerBroadcaster(InetSocketAddress dir, MulticastSocket socket) {
 		this.BCADDR = dir;
@@ -31,13 +24,17 @@ public class ServerBroadcaster extends Thread{
 		while (true) {
 			try {
 				String fecha = LocalDateTime.now().toString();
-				buf = fecha.substring(11, 22).getBytes();
+				String hora = fecha.substring(11, 22);
+				buf = ServerParser.getDatosAgua().getBytes();
 				DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
 				socket.send(packet);
 				sleep(3000);
 			} catch (IOException | InterruptedException e) {
 				e.printStackTrace();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
+	
 }
