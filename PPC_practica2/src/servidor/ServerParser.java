@@ -44,14 +44,14 @@ public class ServerParser {
 	public static String getDatosAire() {
 		String reportAire = "<?xml version=\"1.0\"?>\r\n"
 				+ "<report servername=\"Server1\" formato=\"XML\" tipo=\"aire\">\r\n"
-				+ "	 <datos>\r\n"
-				+ "	    <aire>\r\n"
-				+ "	        <temperatura>" + ThreadLocalRandom.current().nextInt(-30, 64) + "</temperatura>\r\n"
-				+ "	        <velocidad>" + ThreadLocalRandom.current().nextInt(0, 125)+"</velocidad>\r\n"
-				+ "	        <humedad>" + ThreadLocalRandom.current().nextInt(1, 101) + "</humedad>\r\n"
-				+ "         <direccion>" + aireDireccion.values()[ThreadLocalRandom.current().nextInt(0, 8)] + "</direccion>\r\n"	
-				+ "	    </aire>\r\n" 
-				+ "	 </datos>\r\n"
+				+ "<datos>\r\n"
+				+ "<aire>\r\n"
+				+ "<temperatura>" + ThreadLocalRandom.current().nextInt(-30, 64) + "</temperatura>\r\n"
+				+ "<velocidad>" + ThreadLocalRandom.current().nextInt(0, 125)+"</velocidad>\r\n"
+				+ "<humedad>" + ThreadLocalRandom.current().nextInt(1, 101) + "</humedad>\r\n"
+				+ "<direccion>" + aireDireccion.values()[ThreadLocalRandom.current().nextInt(0, 8)] + "</direccion>\r\n"	
+				+ "</aire>\r\n" 
+				+ "</datos>\r\n"
 				+ "</report>";	
 		return reportAire;
 	}

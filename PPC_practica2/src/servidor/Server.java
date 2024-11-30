@@ -39,21 +39,21 @@ public class Server extends Thread{
 				this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), 4999);
 				this.BCSocket = new MulticastSocket(puerto1);
 				this.BCSocket.setReuseAddress(true);
+				break;
 			} catch (IOException e1) {
 				puerto1++;
-				e1.printStackTrace();
 			}
-			
+		}
+		while(true) {
 			try {
 				// para el socket de control también necesitamos un puerto nuevo, así que 
 				// le tendremos que hacer el tratamiento de errores por separado
 				this.CTRLSocket = new DatagramSocket(puerto2); 
 //				this.CTRLSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), puerto2));
+				break;		
 			} catch (IOException e) {
 				puerto2++;
-				e.printStackTrace();
-			}
-				break;		
+			}	
 		}
 	}
 	
@@ -62,12 +62,13 @@ public class Server extends Thread{
 		Server server = new Server("agua");
 		server.BCSocket.joinGroup(server.BCADDR, NetworkInterface.getByName(grupoMulticast));
 		ServerQueryResponder responder = new ServerQueryResponder(server.CTRLSocket);
+		// TODO cambiar el nombre del servidor
 		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.tipoServer);
 		responder.start();
 		broadcaster.start();
 		System.out.println("s1 ehcho");
 		// TODO cuando se lanza el segundo servidor no se inicializa correctamente el CTRLSocket (no tiene sentido esto)
-		Server server2 = new Server("hola");
+		Server server2 = new Server("viento");
 		server2.BCSocket.joinGroup(server2.BCADDR, NetworkInterface.getByName(grupoMulticast));
 		ServerQueryResponder responder2 = new ServerQueryResponder(server2.CTRLSocket);
 		ServerBroadcaster broadcaster2 = new ServerBroadcaster(server2.BCADDR, server2.BCSocket, server2.tipoServer);

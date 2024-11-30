@@ -1,6 +1,7 @@
 package cliente;
 
-import java.io.BufferedReader; 
+import java.awt.BorderLayout;
+import java.io.BufferedReader;  
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -12,6 +13,13 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.Map;
 
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
@@ -20,7 +28,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-public class Client extends Thread{
+public class Client extends JFrame{
 		
 //	private Runnable javi;
 //	private Thread pedro;
@@ -34,6 +42,7 @@ public class Client extends Thread{
 	private InetSocketAddress BCADDR;
 	private byte[] buf = new byte[256];
 	private Map<String, InetSocketAddress> servidores;
+	private JPanel contentPane;
  
     public Client() {
     	
@@ -49,6 +58,30 @@ public class Client extends Thread{
     			puerto2++;
     		}
     	}
+    	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setBounds(100, 100, 450, 300);
+		contentPane = new JPanel();
+		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+
+		setContentPane(contentPane);
+		contentPane.setLayout(new BorderLayout(0, 0));
+		
+		JSplitPane splitPane = new JSplitPane();
+		splitPane.setResizeWeight(0.5);
+		splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		contentPane.add(splitPane, BorderLayout.CENTER);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		splitPane.setLeftComponent(scrollPane);
+		
+		JTextArea textArea = new JTextArea();
+		splitPane.setRightComponent(textArea);
+		
+		try {
+			this.contentPane.setVisible(true);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
         
     
@@ -62,8 +95,6 @@ public class Client extends Thread{
     			socketListen.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
     			parsearPaquete(msg);
-    			
-    			
 			} 
 	    	socketListen.leaveGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
     	}
@@ -103,10 +134,9 @@ public class Client extends Thread{
 		try {
 			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), 4446);
 			socketCtrl.send(resp); 
-			sleep(3000);
 			socketCtrl.receive(resp);
 			System.out.println(new String(resp.getData(), 0, resp.getLength()));
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -152,6 +182,7 @@ public class Client extends Thread{
     
     public static void main(String[] args) {
 		Client cli = new Client();
+		SwingUtilities.invokeLater(Client::new);
 //		try {
 //			cli.socketListen.joinGroup(cli.BCADDR, NetworkInterface.getByName(grupoMulticast));
 //		} catch (IOException e) {
@@ -161,7 +192,7 @@ public class Client extends Thread{
 		if(cli.terminalCliente() == 0) {
 			System.exit(0);
 		}
-//		cli.recibePaquete();
+		
 	}
     
     public void parsearPaquete(String msg) {
@@ -190,7 +221,7 @@ public class Client extends Thread{
 				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
 				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
 				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
-				System.out.println("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph);
+				System.out.print("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph);
 				break;
 			
 			case "aire":				
@@ -199,14 +230,14 @@ public class Client extends Thread{
 				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
 				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
 				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
-				System.out.println("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad + "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h");
+				System.out.print("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad + "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h");
 				break;
 			
 			case "precipitacion":
 				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
 				String intensidad = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
 				String cantidad = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
-				System.out.println("tipo: " + tipoPrecip + ", intensidad: " + intensidad + ", cantidad: " + cantidad + "mm");
+				System.out.print("tipo: " + tipoPrecip + ", intensidad: " + intensidad + ", cantidad: " + cantidad + "mm");
 				break;
 			
 			default: break;
