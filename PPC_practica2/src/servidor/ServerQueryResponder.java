@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 
 public class ServerQueryResponder extends Thread {
@@ -23,10 +24,11 @@ public class ServerQueryResponder extends Thread {
 				socket.receive(query);
 				System.out.println("Recibido: " + new String(query.getData(), 0, query.getLength()));
 				// hacer control del mensaje y tal
-				byte[] buf2 = new byte[256];
+				byte[] buf2 = new byte[512];
 				buf2 = "el server recibió el mensaje de control".getBytes();
-				query = new DatagramPacket(buf2, buf2.length, query.getSocketAddress());
-				socket.send(query);
+				System.out.println(query.getSocketAddress());
+				DatagramPacket ack = new DatagramPacket(buf2, buf2.length, new InetSocketAddress(InetAddress.getByName("192.168.1.14"), 5999));
+				socket.send(ack);
 			}
 			catch(IOException e) {
 				e.printStackTrace();

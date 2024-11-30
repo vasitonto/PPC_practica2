@@ -27,60 +27,74 @@ public class Server extends Thread{
 	private InetSocketAddress BCADDR;
 	private MulticastSocket BCSocket;
 	private DatagramSocket CTRLSocket;
+	private String tipoServer;
 	
-	public Server(){ 
+	public Server(String tipo){ 
+		this.tipoServer = tipo;
 		int puerto1 = BCSocketPort;
 		int puerto2 = CtrlSocketPort;
-		try {
-			// BCADDR será la dirección a la que se enviarán los paquetes de broadcast
-			this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), BCPORT);
-			this.BCSocket = new MulticastSocket(puerto1);
-			this.CTRLSocket = new DatagramSocket(puerto2);
+		int puerto3 = BCPORT;
+		while(true) {
+			try {
+				// BCADDR será la dirección a la que se enviarán los paquetes de broadcast
+				this.CTRLSocket = new DatagramSocket(puerto2); 
+//			this.CTRLSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), puerto2));
+				this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), puerto3);
+				this.BCSocket = new MulticastSocket(puerto1);
+			this.BCSocket.bind(BCADDR);
+				this.BCSocket.setReuseAddress(true);
+				
+			} catch (IOException e) {
+				puerto1++;
+				puerto2++;
+				puerto3++;
+			}
 			
-		} catch (IOException e) {
-			puerto1++;
-			puerto2++;
 		}
 	}
 	
 	
 	public static void main(String[] args) throws IOException {
-		Server server = new Server();
+		Server server = new Server("agua");
 		server.BCSocket.joinGroup(server.BCADDR, NetworkInterface.getByName(grupoMulticast));
 		ServerQueryResponder responder = new ServerQueryResponder(server.CTRLSocket);
-		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket);
+		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.tipoServer);
 		responder.start();
 		broadcaster.start();
+		System.out.println("s1 ehcho");
+		// TODO cuando se lanza el segundo servidor no se inicializa correctamente el CTRLSocket (no tiene sentido esto)
+		Server server2 = new Server("hola");
+		server2.BCSocket.joinGroup(server2.BCADDR, NetworkInterface.getByName(grupoMulticast));
+		ServerQueryResponder responder2 = new ServerQueryResponder(server2.CTRLSocket);
+		ServerBroadcaster broadcaster2 = new ServerBroadcaster(server2.BCADDR, server2.BCSocket, server2.tipoServer);
+		responder2.start();
+		broadcaster2.start();
 	}
 	
-	public void run(Server server){
-	}
 	
-//	private Runnable responder = new Runnable() {
-//		public void run() {
-//			while(true) {
-//				try {
-//					buf = "me cago encima".getBytes();
-//					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
-//					socket.send(packet);
-//					sleep(2990);
-//				} catch (IOException | InterruptedException e) {
-//					e.printStackTrace();
-//				}
-//			}
+//	public void run(Server server){
+//		System.out.println("servidor iniciado");
+//		try {
+//			this.BCSocket.joinGroup(this.BCADDR, NetworkInterface.getByName(grupoMulticast));
+//		} catch (SocketException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
 //		}
-//	};
-	
-//	private void enviarPaq() {
-//		while(true) {
-//			try {
-//				buf = "me cago encima".getBytes();
-//				DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
-//				socket.send(packet);
-//				sleep(2990);
-//			} catch (IOException | InterruptedException e) {
-//				e.printStackTrace();
-//			}
+//		ServerQueryResponder responder = new ServerQueryResponder(this.CTRLSocket);
+//		ServerBroadcaster broadcaster = new ServerBroadcaster(this.BCADDR, this.BCSocket, this.tipoServer);
+//		responder.start();
+//		broadcaster.start();
+//		boolean running = true;
+//		while (running) {
+//            try {
+//                Thread.sleep(1000); // Simulación de trabajo del servidor
+//            } catch (InterruptedException e) {
+//                System.out.println("El servidor fue interrumpido.");
+//                running = false;
+//            }
 //		}
 //	}
 }

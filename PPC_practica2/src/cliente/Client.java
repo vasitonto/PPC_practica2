@@ -10,9 +10,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.util.Map;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class Client extends Thread{
@@ -28,6 +30,7 @@ public class Client extends Thread{
 	private DatagramSocket socketCtrl; // socket para enviar msg de control y recibirlos
 	private InetSocketAddress BCADDR;
 	private byte[] buf = new byte[256];
+	private Map<String, InetSocketAddress> servidores;
  
     public Client() {
     	
@@ -50,6 +53,7 @@ public class Client extends Thread{
     
     public void recibePaquete() {
 //    	while (true) {
+    	// TODO tocar esto pa que lea diferentes tipos, entender el DOM
     	try {
 	    	socketListen.joinGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
 	    	for(int i = 0; i < 4; i++) {
@@ -60,7 +64,29 @@ public class Client extends Thread{
     			NodeList reportNodeList = reportDoc.getElementsByTagName("report");
     			Element reportElement = reportDoc.getDocumentElement();
     			
-    			System.out.println(reportElement.getNodeName());
+    			
+    			Element root = reportDoc.getDocumentElement();                
+                // Paso 4: Acceder a los atributos del elemento raíz
+                String servername = root.getAttribute("servername");
+                String formato = root.getAttribute("formato");
+                String tipo = root.getAttribute("tipo");
+                
+                System.out.print(servername + " [formato: " + formato + ", datos: "+ tipo + "]: ");
+                
+                // Paso 5: Obtener los elementos <datos> y dentro los elementos <agua>
+                NodeList datosList = reportDoc.getElementsByTagName("datos");
+                Node datosNode = datosList.item(0);
+                
+                // Obtener los elementos <agua> dentro de <datos>
+                NodeList aguaList = ((Element) datosNode).getElementsByTagName("agua");
+                Node aguaNode = aguaList.item(0);
+                
+                String temperatura = ((Element) aguaNode).getElementsByTagName("temperatura").item(0).getTextContent();
+                String nivel = ((Element) aguaNode).getElementsByTagName("nivel").item(0).getTextContent();
+                String ph = ((Element) aguaNode).getElementsByTagName("ph").item(0).getTextContent();
+                System.out.println("temperatura: " + temperatura + ", nivel: " + nivel + ", ph: " + ph);
+    			
+    			
 			} 
 	    	socketListen.leaveGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
     	}
