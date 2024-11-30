@@ -1,6 +1,7 @@
 package cliente;
 
 import java.awt.BorderLayout;
+import java.awt.EventQueue;
 import java.io.BufferedReader;  
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,7 +29,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-public class Client extends JFrame{
+public class Client extends JFrame implements Runnable{
 		
 //	private Runnable javi;
 //	private Thread pedro;
@@ -42,9 +43,38 @@ public class Client extends JFrame{
 	private InetSocketAddress BCADDR;
 	private byte[] buf = new byte[256];
 	private Map<String, InetSocketAddress> servidores;
+	private JFrame consola;
 	private JPanel contentPane;
  
     public Client() {
+    	
+    	consola = new JFrame("Consola Cliente"); // Creamos la ventana
+        consola.setSize(400, 300);
+    	consola.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    	consola.setBounds(100, 100, 450, 300);
+    	contentPane = new JPanel();
+    	contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+    	
+    	consola.setContentPane(contentPane);
+    	contentPane.setLayout(new BorderLayout(0, 0));
+    	
+    	JSplitPane splitPane = new JSplitPane();
+    	splitPane.setResizeWeight(0.5);
+    	splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+    	contentPane.add(splitPane, BorderLayout.CENTER);
+    	
+    	JScrollPane scrollPane = new JScrollPane();
+    	splitPane.setLeftComponent(scrollPane);
+    	
+    	JTextArea textArea = new JTextArea();
+    	splitPane.setRightComponent(textArea);
+    	
+    	try {
+    		this.consola.setVisible(true);
+    	} catch (Exception e) {
+    		e.printStackTrace();
+    	}
+    	
     	
     	int puerto2 = this.portCtrl;
     	// Mediante este bucle se pueden lanzar varios clientes
@@ -58,30 +88,6 @@ public class Client extends JFrame{
     			puerto2++;
     		}
     	}
-    	setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
-		contentPane = new JPanel();
-		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-
-		setContentPane(contentPane);
-		contentPane.setLayout(new BorderLayout(0, 0));
-		
-		JSplitPane splitPane = new JSplitPane();
-		splitPane.setResizeWeight(0.5);
-		splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		contentPane.add(splitPane, BorderLayout.CENTER);
-		
-		JScrollPane scrollPane = new JScrollPane();
-		splitPane.setLeftComponent(scrollPane);
-		
-		JTextArea textArea = new JTextArea();
-		splitPane.setRightComponent(textArea);
-		
-		try {
-			this.contentPane.setVisible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
     }
         
     
@@ -181,19 +187,23 @@ public class Client extends JFrame{
     }
     
     public static void main(String[] args) {
-		Client cli = new Client();
-		SwingUtilities.invokeLater(Client::new);
+//		Client cli = new Client();
+		EventQueue.invokeLater(new Client());
 //		try {
 //			cli.socketListen.joinGroup(cli.BCADDR, NetworkInterface.getByName(grupoMulticast));
 //		} catch (IOException e) {
 //			e.printStackTrace();
 //		}
-//		System.out.println("escuchando en " + cli.socketListen.getLocalPort() + ", controlando en " + cli.socketCtrl.getLocalPort());
-		if(cli.terminalCliente() == 0) {
-			System.exit(0);
-		}
+		System.out.println("escuchando en " + cli.socketListen.getLocalPort() + ", controlando en " + cli.socketCtrl.getLocalPort());
+//		if(cli.terminalCliente() == 0) {
+//			System.exit(0);
+//		}
 		
 	}
+    
+    public void run() {
+    	
+    }
     
     public void parsearPaquete(String msg) {
     	
