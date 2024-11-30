@@ -1,7 +1,9 @@
 package cliente;
 
-import java.awt.BorderLayout;
+import java.awt.BorderLayout; 
 import java.awt.EventQueue;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;  
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -21,6 +23,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
@@ -45,9 +48,26 @@ public class Client extends JFrame implements Runnable{
 	private Map<String, InetSocketAddress> servidores;
 	private JFrame consola;
 	private JPanel contentPane;
+	private JScrollPane salidaMensajes;
+	private JTextArea textAreaEntrada;
+	private JTextArea textAreaSalida;
  
     public Client() {
+    	// ################# CODIGO DE SOCKETS ###############
+    	int puerto2 = this.portCtrl;
+    	// Mediante este bucle se pueden lanzar varios clientes
+    	while(true) {
+    		try {
+    			this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), portListen);
+    			this.socketListen = new MulticastSocket(portListen);
+    			this.socketCtrl = new DatagramSocket(puerto2);
+    			break;
+    		} catch (IOException e) {
+    			puerto2++;
+    		}
+    	}
     	
+    	// ################# CODIGO DE GUI ###############
     	consola = new JFrame("Consola Cliente"); // Creamos la ventana
         consola.setSize(400, 300);
     	consola.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -63,11 +83,18 @@ public class Client extends JFrame implements Runnable{
     	splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
     	contentPane.add(splitPane, BorderLayout.CENTER);
     	
-    	JScrollPane scrollPane = new JScrollPane();
-    	splitPane.setLeftComponent(scrollPane);
+    	textAreaSalida = new JTextArea();
+    	textAreaSalida.setEditable(false);
+    	textAreaSalida.setLineWrap(true); // esto hace que se envuelvan las lineas muy largas
+    	textAreaSalida.setWrapStyleWord(true); // esto corta las líneas por palabras
+    	salidaMensajes = new JScrollPane(textAreaSalida);
+    	salidaMensajes.setAutoscrolls(true);
+    	splitPane.setLeftComponent(salidaMensajes);
     	
-    	JTextArea textArea = new JTextArea();
-    	splitPane.setRightComponent(textArea);
+    	textAreaEntrada = new JTextArea();
+    	splitPane.setRightComponent(textAreaEntrada);
+    	
+    	anadirKeyListener();
     	
     	try {
     		this.consola.setVisible(true);
@@ -75,21 +102,18 @@ public class Client extends JFrame implements Runnable{
     		e.printStackTrace();
     	}
     	
-    	
-    	int puerto2 = this.portCtrl;
-    	// Mediante este bucle se pueden lanzar varios clientes
-    	while(true) {
-    		try {
-    			this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), portListen);
-    			this.socketListen = new MulticastSocket(portListen);
-    			this.socketCtrl = new DatagramSocket(puerto2);
-    			break;
-    		} catch (IOException e) {
-    			puerto2++;
-    		}
-    	}
     }
         
+    private void anadirKeyListener() {
+    	textAreaEntrada.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    e.consume(); // Evitar salto de línea en el JTextArea
+                }
+            }
+        });
+    }
     
     public void recibePaquete() {
 //    	while (true) {
@@ -149,7 +173,8 @@ public class Client extends JFrame implements Runnable{
     
     private int terminalCliente() {
     	boolean print = true;
-    	System.out.println("Teclea \"help\" para ver la lista de comandos.");
+//    	System.out.println();
+    	textAreaEntrada.append("Teclea \"help\" para ver la lista de comandos.");
     	while(true) {
     		BufferedReader lector = new BufferedReader(new InputStreamReader(System.in));
     		if(print) {
@@ -188,13 +213,13 @@ public class Client extends JFrame implements Runnable{
     
     public static void main(String[] args) {
 //		Client cli = new Client();
-		EventQueue.invokeLater(new Client());
+		SwingUtilities.invokeLater(new Client());
 //		try {
 //			cli.socketListen.joinGroup(cli.BCADDR, NetworkInterface.getByName(grupoMulticast));
 //		} catch (IOException e) {
 //			e.printStackTrace();
 //		}
-		System.out.println("escuchando en " + cli.socketListen.getLocalPort() + ", controlando en " + cli.socketCtrl.getLocalPort());
+//		System.out.println("escuchando en " + cli.socketListen.getLocalPort() + ", controlando en " + cli.socketCtrl.getLocalPort());
 //		if(cli.terminalCliente() == 0) {
 //			System.exit(0);
 //		}
@@ -202,7 +227,12 @@ public class Client extends JFrame implements Runnable{
 	}
     
     public void run() {
-    	
+    	textAreaEntrada.append("hola poyica");
+    	terminalCliente();
+//		System.out.println("escuchando en " + socketListen.getLocalPort() + ", controlando en " + socketCtrl.getLocalPort());
+//		if(terminalCliente() == 0) {
+//			System.exit(0);
+//		}
     }
     
     public void parsearPaquete(String msg) {
