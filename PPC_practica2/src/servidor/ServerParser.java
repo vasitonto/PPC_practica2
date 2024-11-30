@@ -29,7 +29,7 @@ public class ServerParser {
 				+ "	    <agua>\r\n"
 				+ "	        <temperatura>" + ThreadLocalRandom.current().nextInt(1, 64) + "</temperatura>\r\n"
 				+ "	        <nivel>" + ThreadLocalRandom.current().nextInt(1, 101)+"</nivel>\r\n"
-				+ "	        <ph>" + ThreadLocalRandom.current().nextDouble(2.0, 8.0) + "</ph>\r\n"
+				+ "	        <ph>" + String.valueOf(ThreadLocalRandom.current().nextDouble(2.0, 8.0)).substring(0, 4) + "</ph>\r\n"
 				+ "	    </agua>\r\n"
 				+ "	 </datos>\r\n"
 				+ "</report>";	

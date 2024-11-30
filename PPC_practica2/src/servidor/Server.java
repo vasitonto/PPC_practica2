@@ -33,23 +33,27 @@ public class Server extends Thread{
 		this.tipoServer = tipo;
 		int puerto1 = BCSocketPort;
 		int puerto2 = CtrlSocketPort;
-		int puerto3 = BCPORT;
 		while(true) {
 			try {
 				// BCADDR será la dirección a la que se enviarán los paquetes de broadcast
-				this.CTRLSocket = new DatagramSocket(puerto2); 
-//			this.CTRLSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), puerto2));
-				this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), puerto3);
+				this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), 4999);
 				this.BCSocket = new MulticastSocket(puerto1);
-			this.BCSocket.bind(BCADDR);
 				this.BCSocket.setReuseAddress(true);
-				
-			} catch (IOException e) {
+			} catch (IOException e1) {
 				puerto1++;
-				puerto2++;
-				puerto3++;
+				e1.printStackTrace();
 			}
 			
+			try {
+				// para el socket de control también necesitamos un puerto nuevo, así que 
+				// le tendremos que hacer el tratamiento de errores por separado
+				this.CTRLSocket = new DatagramSocket(puerto2); 
+//				this.CTRLSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), puerto2));
+			} catch (IOException e) {
+				puerto2++;
+				e.printStackTrace();
+			}
+				break;		
 		}
 	}
 	

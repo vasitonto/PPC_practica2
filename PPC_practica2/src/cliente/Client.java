@@ -12,10 +12,13 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.Map;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public class Client extends Thread{
 		
@@ -34,7 +37,6 @@ public class Client extends Thread{
  
     public Client() {
     	
-    	int puerto1 = this.portListen;
     	int puerto2 = this.portCtrl;
     	// Mediante este bucle se pueden lanzar varios clientes
     	while(true) {
@@ -44,7 +46,6 @@ public class Client extends Thread{
     			this.socketCtrl = new DatagramSocket(puerto2);
     			break;
     		} catch (IOException e) {
-    			puerto1++;
     			puerto2++;
     		}
     	}
@@ -60,31 +61,7 @@ public class Client extends Thread{
     			DatagramPacket pak = new DatagramPacket(buf, buf.length);
     			socketListen.receive(pak);
     			String msg = new String(pak.getData(), 0, pak.getLength());
-    			Document reportDoc = ClientParser.loadXMLFromString(msg);
-    			NodeList reportNodeList = reportDoc.getElementsByTagName("report");
-    			Element reportElement = reportDoc.getDocumentElement();
-    			
-    			
-    			Element root = reportDoc.getDocumentElement();                
-                // Paso 4: Acceder a los atributos del elemento raíz
-                String servername = root.getAttribute("servername");
-                String formato = root.getAttribute("formato");
-                String tipo = root.getAttribute("tipo");
-                
-                System.out.print(servername + " [formato: " + formato + ", datos: "+ tipo + "]: ");
-                
-                // Paso 5: Obtener los elementos <datos> y dentro los elementos <agua>
-                NodeList datosList = reportDoc.getElementsByTagName("datos");
-                Node datosNode = datosList.item(0);
-                
-                // Obtener los elementos <agua> dentro de <datos>
-                NodeList aguaList = ((Element) datosNode).getElementsByTagName("agua");
-                Node aguaNode = aguaList.item(0);
-                
-                String temperatura = ((Element) aguaNode).getElementsByTagName("temperatura").item(0).getTextContent();
-                String nivel = ((Element) aguaNode).getElementsByTagName("nivel").item(0).getTextContent();
-                String ph = ((Element) aguaNode).getElementsByTagName("ph").item(0).getTextContent();
-                System.out.println("temperatura: " + temperatura + ", nivel: " + nivel + ", ph: " + ph);
+    			parsearPaquete(msg);
     			
     			
 			} 
@@ -93,32 +70,31 @@ public class Client extends Thread{
     	catch (IOException e) {
     		e.printStackTrace();
     	} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     }
     
-//TODO investigar como interrumpir este hilo o la funcion de arriba    
-    private Thread listenThread = new Thread(new Runnable() {
-		private byte[] buf2 = new byte[256];
-    	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
-    	
-		@Override
-		public void run() {
-			for(int i = 0; i < 5; i++){
-//			while(true) {
-				try {
-					socketListen.receive(recvPak);
-					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
-					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
-				} 
-				catch (IOException e) {
-					e.printStackTrace();
-					break;
-				}
-			}			
-		};
-	});
+////TODO investigar como interrumpir este hilo o la funcion de arriba    
+//    private Thread listenThread = new Thread(new Runnable() {
+//		private byte[] buf2 = new byte[256];
+//    	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
+//    	
+//		@Override
+//		public void run() {
+//			for(int i = 0; i < 5; i++){
+////			while(true) {
+//				try {
+//					socketListen.receive(recvPak);
+//					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
+//					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
+//				} 
+//				catch (IOException e) {
+//					e.printStackTrace();
+//					break;
+//				}
+//			}			
+//		};
+//	});
     
     public void enviaControl(String msg) {
     	byte [] bufResp = msg.getBytes();
@@ -187,5 +163,58 @@ public class Client extends Thread{
 		}
 //		cli.recibePaquete();
 	}
+    
+    public void parsearPaquete(String msg) {
+    	
+		try {
+			Document reportDoc = ClientParser.loadXMLFromString(msg);
+			
+			Element root = reportDoc.getDocumentElement();                
+			// accedemos a los atribs. del nodo raíz
+			String servername = root.getAttribute("servername");
+			String formato = root.getAttribute("formato");
+			String tipo = root.getAttribute("tipo");
+			
+			System.out.print(servername + " [formato: " + formato + ", datos: "+ tipo + "]: ");
+			NodeList datosList = reportDoc.getElementsByTagName("datos");
+			Node datosNode = datosList.item(0);
+			NodeList listaValores= ((Element) datosNode).getElementsByTagName(tipo);
+			Node nodoValores = listaValores.item(0);
+			// según del tipo que sea el mensaje lo deberemos parsear de una forma u otra
+			switch(tipo) {
+			case "agua":
+				// obtenemos el elemento "datos"
+				
+				// obtenemos los elementos dentro de "agua"
+				
+				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
+				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
+				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
+				System.out.println("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph);
+				break;
+			
+			case "aire":				
+				// obtenemos los elementos para "viento"	
+				String temperaturaViento = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
+				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
+				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
+				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
+				System.out.println("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad + "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h");
+				break;
+			
+			case "precipitacion":
+				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
+				String intensidad = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
+				String cantidad = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
+				System.out.println("tipo: " + tipoPrecip + ", intensidad: " + intensidad + ", cantidad: " + cantidad + "mm");
+				break;
+			
+			default: break;
+			}
+			
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+    }
 }
 
