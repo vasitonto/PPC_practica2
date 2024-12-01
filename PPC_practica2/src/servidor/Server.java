@@ -21,22 +21,23 @@ public class Server extends Thread{
 	//TODO hacer el sistema de forma que se puedan lanzar varios servidores
 	// es decir, que el nº del puerto vaya cambiando
 	private static final int BCSocketPort = 4445; // puerto desde el cual se enviarán los mensajes bcast
-	private static final int CtrlSocketPort = 4446;
+//	private static final int CtrlSocketPort = 4446;
 	private static final int BCPORT = 4999; // puerto en el que escucha el cliente
 	private static final String grupoMulticast = "224.48.75.1";
 	private InetSocketAddress BCADDR;
 	private MulticastSocket BCSocket;
 	private DatagramSocket CTRLSocket;
-	private String tipoServer;
+	private String[] serverID = new String[2];
 	
-	public Server(String tipo){ 
-		this.tipoServer = tipo;
+	public Server(String id, String tipo, int escucha){
+		this.serverID[0] = id;
+		this.serverID[1] = tipo;
 		int puerto1 = BCSocketPort;
-		int puerto2 = CtrlSocketPort;
+//		int puerto2 = CtrlSocketPort;
 		while(true) {
 			try {
 				// BCADDR será la dirección a la que se enviarán los paquetes de broadcast
-				this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), 4999);
+				this.BCADDR = new InetSocketAddress(InetAddress.getByName(grupoMulticast), BCPORT);
 				this.BCSocket = new MulticastSocket(puerto1);
 				this.BCSocket.setReuseAddress(true);
 				break;
@@ -48,32 +49,40 @@ public class Server extends Thread{
 			try {
 				// para el socket de control también necesitamos un puerto nuevo, así que 
 				// le tendremos que hacer el tratamiento de errores por separado
-				this.CTRLSocket = new DatagramSocket(puerto2); 
+				this.CTRLSocket = new DatagramSocket(escucha); 
 //				this.CTRLSocket.bind(new InetSocketAddress(InetAddress.getByName("localhost"), puerto2));
 				break;		
 			} catch (IOException e) {
-				puerto2++;
+//				puerto2++;
 			}	
 		}
 	}
 	
 	
 	public static void main(String[] args) throws IOException {
-		Server server = new Server("agua");
+		Server server = new Server("1", "agua", 4446);
 		server.BCSocket.joinGroup(server.BCADDR, NetworkInterface.getByName(grupoMulticast));
 		ServerQueryResponder responder = new ServerQueryResponder(server.CTRLSocket);
 		// TODO cambiar el nombre del servidor
-		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.tipoServer);
+		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.serverID);
 		responder.start();
 		broadcaster.start();
 		System.out.println("s1 ehcho");
-		// TODO cuando se lanza el segundo servidor no se inicializa correctamente el CTRLSocket (no tiene sentido esto)
-		Server server2 = new Server("viento");
+		
+		Server server2 = new Server("2", "viento", 4447);
 		server2.BCSocket.joinGroup(server2.BCADDR, NetworkInterface.getByName(grupoMulticast));
 		ServerQueryResponder responder2 = new ServerQueryResponder(server2.CTRLSocket);
-		ServerBroadcaster broadcaster2 = new ServerBroadcaster(server2.BCADDR, server2.BCSocket, server2.tipoServer);
+		ServerBroadcaster broadcaster2 = new ServerBroadcaster(server2.BCADDR, server2.BCSocket, server2.serverID);
 		responder2.start();
 		broadcaster2.start();
+		
+		Server server3 = new Server("3", "precipitacion", 4448);
+		server3.BCSocket.joinGroup(server3.BCADDR, NetworkInterface.getByName(grupoMulticast));
+		ServerQueryResponder responder3 = new ServerQueryResponder(server3.CTRLSocket);
+		ServerBroadcaster broadcaster3 = new ServerBroadcaster(server3.BCADDR, server3.BCSocket, server3.serverID);
+		responder3.start();
+		broadcaster3.start();
+		System.out.println("hola");
 	}
 	
 	

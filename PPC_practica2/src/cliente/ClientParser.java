@@ -19,6 +19,30 @@ public class ClientParser {
 	    Document doc = DocBuilder.parse(is);
 	    doc.getDocumentElement().normalize();
 	    return doc;
-	    
 	}
+	
+		public static String creaControl(int tipo, int dato) {
+			String mensaje;
+			switch(tipo) {
+			case 0:
+				mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"json\"}";
+				break;
+			case 1:
+				mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"xml\"}";
+				break;
+			case 2:
+				mensaje = "{ \"solicitud\": \"stop\"}";
+				break;
+			case 3:
+				mensaje = "{ \"solicitud\": \"continue\"}";
+				break;
+			case 4:
+				mensaje = "{ \"solicitud\": \"cambioFreq\", \"intervalo\": \"" + dato + "\"}";
+				break;
+			default:
+				mensaje = "{ \"solicitud\": \"hello\"}";
+				break;
+			}
+			return mensaje;
+		}
 }

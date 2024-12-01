@@ -1,0 +1,22 @@
+{
+	"tipoSolicitud": "formato",
+	"tipoFormato": "json"
+}
+
+{
+	"tipoSolicitud": "formato", 
+	"tipoFormato": "XML"
+}
+
+{
+	"tipoSolicitud": "frecuencia",
+	"periodo": "2000"
+}
+
+{
+	"tipoSolicitud": "parada"
+}
+
+{
+	"tipoSolicitud": "continuacion"
+}

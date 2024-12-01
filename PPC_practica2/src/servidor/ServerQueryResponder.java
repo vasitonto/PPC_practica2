@@ -22,8 +22,9 @@ public class ServerQueryResponder extends Thread {
 				byte[] buf = new byte[256];
 				DatagramPacket query = new DatagramPacket(buf, buf.length);
 				socket.receive(query);
-				System.out.println("Recibido: " + new String(query.getData(), 0, query.getLength()));
-				// hacer control del mensaje y tal
+				String querystr = new String(query.getData(), 0, query.getLength());
+				System.out.println("Recibido: " + querystr);
+				ServerParser.parseaCtrl(querystr);
 				byte[] buf2 = new byte[512];
 				buf2 = "el server recibió el mensaje de control".getBytes();
 				System.out.println(query.getSocketAddress());

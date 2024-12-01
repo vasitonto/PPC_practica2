@@ -4,8 +4,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
+
+import com.google.gson.Gson;
+
 import java.io.StringReader;
 import java.util.concurrent.ThreadLocalRandom;
+
 
 public class ServerParser {
 	
@@ -22,9 +26,13 @@ public class ServerParser {
 	    return DocBuilder.parse(is);
 	}
 	
-	public static String getDatosAgua() {
+	public static String parseaCtrl(String query) {
+		Gson gson = new Gson();
+	}
+	
+	public static String getDatosAgua(String id) {
 		String reportAgua = "<?xml version=\"1.0\"?>\r\n"
-				+ "<report servername=\"Server1\" formato=\"XML\" tipo=\"agua\">\r\n"
+				+ "<report servername=\"Server" + id + "\" formato=\"XML\" tipo=\"agua\">\r\n"
 				+ "	 <datos>\r\n"
 				+ "	    <agua>\r\n"
 				+ "	        <temperatura>" + ThreadLocalRandom.current().nextInt(1, 64) + "</temperatura>\r\n"
@@ -36,14 +44,14 @@ public class ServerParser {
 		return reportAgua;
 	}
 	
-	public static String getDatosSuelo() {
+	public static String getDatosSuelo(String id) {
 		String reportSuelo = "hola";
 		return reportSuelo;
 	}
 	
-	public static String getDatosAire() {
+	public static String getDatosAire(String id) {
 		String reportAire = "<?xml version=\"1.0\"?>\r\n"
-				+ "<report servername=\"Server1\" formato=\"XML\" tipo=\"aire\">\r\n"
+				+ "<report servername=\"Server" + id + "\" formato=\"XML\" tipo=\"aire\">\r\n"
 				+ "<datos>\r\n"
 				+ "<aire>\r\n"
 				+ "<temperatura>" + ThreadLocalRandom.current().nextInt(-30, 64) + "</temperatura>\r\n"
@@ -56,16 +64,16 @@ public class ServerParser {
 		return reportAire;
 	}
 	
-	public static String getDatosPrecip() {
+	public static String getDatosPrecip(String id) {
 		String reportPrecip = "<?xml version=\"1.0\"?>\r\n"
-				+ "<report servername=\"Server1\" formato=\"XML\" tipo=\"precipitacion\">\r\n"
-				+ "	 <datos>\r\n"
-				+ "	    <precipitacion>\r\n"
-				+ "	        <tipo>" + precipitacionTipo.values()[ThreadLocalRandom.current().nextInt(0, 7)] + "</tipo>\r\n"
-				+ "	        <intensidad>" + precipitacionIntensidad.values()[ThreadLocalRandom.current().nextInt(0, 4)] +"</intensidad>\r\n"
-				+ "	        <cantidad>" + ThreadLocalRandom.current().nextInt(0, 3001) + "</cantidad>\r\n"
-				+ "	    </agua>\r\n"
-				+ "	 </datos>\r\n"
+				+ "<report servername=\"Server" + id + "\" formato=\"XML\" tipo=\"precipitacion\">\r\n"
+				+ "<datos>\r\n"
+				+ "<precipitacion>\r\n"
+				+ "<tipo>" + precipitacionTipo.values()[ThreadLocalRandom.current().nextInt(0, 4)] + "</tipo>\r\n"
+				+ "<intensidad>" + precipitacionIntensidad.values()[ThreadLocalRandom.current().nextInt(0, 7)] +"</intensidad>\r\n"
+				+ "<cantidad>" + ThreadLocalRandom.current().nextInt(0, 3001) + "</cantidad>\r\n"
+				+ "</precipitacion>\r\n"
+				+ "</datos>\r\n"
 				+ "</report>";	
 		return reportPrecip;
 	}
