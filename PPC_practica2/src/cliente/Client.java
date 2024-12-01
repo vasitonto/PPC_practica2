@@ -15,6 +15,9 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -23,7 +26,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
-
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultCaret;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
@@ -51,6 +55,7 @@ public class Client extends JFrame implements Runnable{
 	private JScrollPane salidaMensajes;
 	private JTextArea textAreaEntrada;
 	private JTextArea textAreaSalida;
+	private String command;
  
     public Client() {
     	// ################# CODIGO DE SOCKETS ###############
@@ -92,7 +97,13 @@ public class Client extends JFrame implements Runnable{
     	splitPane.setLeftComponent(salidaMensajes);
     	
     	textAreaEntrada = new JTextArea();
-    	splitPane.setRightComponent(textAreaEntrada);
+    	textAreaEntrada.setLineWrap(true);
+    	textAreaEntrada.setWrapStyleWord(true);
+    	DefaultCaret caret = (DefaultCaret)textAreaEntrada.getCaret();
+    	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+    	JScrollPane scrollPaneEntrada = new JScrollPane(textAreaEntrada);
+    	scrollPaneEntrada.setAutoscrolls(true);
+    	splitPane.setRightComponent(scrollPaneEntrada);
     	
     	anadirKeyListener();
     	
@@ -109,53 +120,53 @@ public class Client extends JFrame implements Runnable{
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    e.consume(); // Evitar salto de línea en el JTextArea
+                    command = getTextoLinea();
+                    synchronized(textAreaEntrada) {
+                    	textAreaEntrada.notify();
+                    }
                 }
             }
         });
     }
     
-    public void recibePaquete() {
-//    	while (true) {
-    	// TODO tocar esto pa que lea diferentes tipos, entender el DOM
-    	try {
-	    	socketListen.joinGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
-	    	for(int i = 0; i < 4; i++) {
-    			DatagramPacket pak = new DatagramPacket(buf, buf.length);
-    			socketListen.receive(pak);
-    			String msg = new String(pak.getData(), 0, pak.getLength());
-    			parsearPaquete(msg);
-			} 
-	    	socketListen.leaveGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
-    	}
-    	catch (IOException e) {
-    		e.printStackTrace();
-    	} catch (Exception e) {
-			e.printStackTrace();
-		}
+    private String getTextoLinea() {
+        int curPos = textAreaEntrada.getCaretPosition();
+        
+        // Obtener el número de línea en la que se encuentra el cursor
+        try {
+            javax.swing.text.Document doc = textAreaEntrada.getDocument();
+            int linea = textAreaEntrada.getLineOfOffset(curPos); // Número de línea
+            int inicioLinea = textAreaEntrada.getLineStartOffset(linea); // Inicio de la línea
+            int finLinea = textAreaEntrada.getLineEndOffset(linea); // Fin de la línea
+
+            // Obtener el texto de esa línea
+            return doc.getText(inicioLinea, finLinea - inicioLinea);
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
     
-////TODO investigar como interrumpir este hilo o la funcion de arriba    
-//    private Thread listenThread = new Thread(new Runnable() {
-//		private byte[] buf2 = new byte[256];
-//    	private DatagramPacket recvPak = new DatagramPacket(buf2, buf2.length);
-//    	
-//		@Override
-//		public void run() {
-//			for(int i = 0; i < 5; i++){
-////			while(true) {
-//				try {
-//					socketListen.receive(recvPak);
-//					String msg = new String(recvPak.getData(), 0, recvPak.getLength());
-//					System.out.println("De " + recvPak.getSocketAddress() + ": " + msg);
-//				} 
-//				catch (IOException e) {
-//					e.printStackTrace();
-//					break;
-//				}
-//			}			
-//		};
-//	});
+    public void recibePaquete() {
+    	while (true) {
+    	// TODO tocar esto pa que lea diferentes tipos, entender el DOM
+	    	try {
+	//	    	socketListen.joinGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
+	//	    	for(int i = 0; i < 4; i++) {
+	    			DatagramPacket pak = new DatagramPacket(buf, buf.length);
+	    			socketListen.receive(pak);
+	    			String msg = new String(pak.getData(), 0, pak.getLength());
+	    			parsearPaquete(msg);
+	//			} 
+	//	    	socketListen.leaveGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
+	    	}
+	    	catch (IOException e) {
+	    		e.printStackTrace();
+	    	} catch (Exception e) {
+				e.printStackTrace();
+			}
+    	}
+    }
     
     public void enviaControl(String msg) {
     	byte [] bufResp = msg.getBytes();
@@ -173,42 +184,56 @@ public class Client extends JFrame implements Runnable{
     
     private int terminalCliente() {
     	boolean print = true;
-//    	System.out.println();
-    	textAreaEntrada.append("Teclea \"help\" para ver la lista de comandos.");
+    	textAreaEntrada.append("Teclea \"help\" para ver la lista de comandos.\n");
     	while(true) {
-    		BufferedReader lector = new BufferedReader(new InputStreamReader(System.in));
+    		
     		if(print) {
-    			System.out.println("Esperando input...: ");    			
+    			textAreaEntrada.append("Esperando input...:\n");
     		}
-    		try {
-    			String command = lector.readLine();
-    			switch (command) {
-    			case "exit":
-    				return 0;
-    			case "listen":
-    				recibePaquete();
-//    				this.listenThread.run();
-//    				print = false;
-    				break;
-    			case "stop":
+			synchronized (textAreaEntrada) {
+	            try {
+	                // El hilo se bloquea aquí hasta que se presiona Enter
+	                textAreaEntrada.wait();
+	            } catch (InterruptedException e) {
+	                e.printStackTrace();
+	            }
+			}
+			
+			switch (command) {
+			case "exit":
+				return 0;
+//			case "listen":
+//				recibePaquete();
+////    				this.listenThread.run();
+////    				print = false;
+//				break;
+			case "stop":
 //    				this.listenThread.interrupt();
-    				break;
-    			case "control":
-    				enviaControl("mensaje de control");
-    				break;
-    			case "help":
-    				System.out.println("exit - termina el programa.\nlisten - escucha mensajes de los servidores\n"
-    						+ "control - envía mensajes de control al servidor\nhelp - muestra esta ayuda");
-    				break;
-    			default:
-    				System.out.println("No se esperaba esa palabra, inténtalo de nuevo...");
-    				break;
-    			}
-    		}
-    		catch(IOException e){
-    			e.printStackTrace();
-    		}
+				break;
+			case "control":
+				enviaControl("mensaje de control");
+				break;
+			case "help":
+				textAreaEntrada.append("exit - termina el programa.\n"
+//						+ "listen - escucha mensajes de los servidores\n"
+						+ "control - envía mensajes de control al servidor\n"
+						+ "clear - limpia la terminal\n" 
+						+ "help - muestra esta ayuda\n");
+				break;
+			case "clear":
+				textAreaEntrada.setText("");
+				break;
+			default:
+				textAreaEntrada.append("No se esperaba esa palabra, inténtalo de nuevo...\n");
+				break;
+			}
+			
     	}
+    }
+    
+    public void consolePrint(String texto) {
+    	textAreaEntrada.append(texto+"\r\n");
+    	textAreaEntrada.setCaretPosition(textAreaEntrada.getDocument().getLength());
     }
     
     public static void main(String[] args) {
@@ -227,12 +252,21 @@ public class Client extends JFrame implements Runnable{
 	}
     
     public void run() {
-    	textAreaEntrada.append("hola poyica");
-    	terminalCliente();
-//		System.out.println("escuchando en " + socketListen.getLocalPort() + ", controlando en " + socketCtrl.getLocalPort());
-//		if(terminalCliente() == 0) {
-//			System.exit(0);
-//		}
+//    	Thread hiloConsola = new Thread(()->{
+//    		terminalCliente();
+//    	});
+//    	hiloConsola.start();
+    	
+    	ExecutorService exec = Executors.newFixedThreadPool(2);
+    	
+    	// TODO esta vaina 
+    	Future <Integer> resultado = exec.submit(() -> terminalCliente());
+    	exec.submit(() -> recibePaquete());
+    	if(resultado == 0){
+    		System.exit(0);
+    	};
+    	
+    	exec.shutdown();
     }
     
     public void parsearPaquete(String msg) {
@@ -261,7 +295,7 @@ public class Client extends JFrame implements Runnable{
 				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
 				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
 				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
-				System.out.print("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph);
+				textAreaSalida.append("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph + "\n");
 				break;
 			
 			case "aire":				
@@ -270,14 +304,16 @@ public class Client extends JFrame implements Runnable{
 				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
 				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
 				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
-				System.out.print("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad + "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h");
+				textAreaSalida.append("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad 
+						+ "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h\n");
 				break;
 			
 			case "precipitacion":
 				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
 				String intensidad = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
 				String cantidad = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
-				System.out.print("tipo: " + tipoPrecip + ", intensidad: " + intensidad + ", cantidad: " + cantidad + "mm");
+				textAreaSalida.append("tipo: " + tipoPrecip + ", intensidad: " 
+						+ intensidad + ", cantidad: " + cantidad + "mm\n" );
 				break;
 			
 			default: break;
