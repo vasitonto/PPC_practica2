@@ -1,18 +1,19 @@
 package servidor;
 
+import java.io.StringReader;
+import java.util.concurrent.ThreadLocalRandom;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 import com.google.gson.Gson;
 
-import java.io.StringReader;
-import java.util.concurrent.ThreadLocalRandom;
 
+public class ServerParser{
 
-public class ServerParser {
-	
 	private enum aireDireccion {Norte, Sur, Este, Oeste, Noroeste, Noreste, Suroeste, Sureste};
 	private enum precipitacionTipo {Lluvia, Nieve, Granizo, Tormenta};
 	private enum precipitacionIntensidad {Nula, Suave, Ligera, Moderada, Fuerte, Intensa, Extrema};
@@ -78,3 +79,4 @@ public class ServerParser {
 		return reportPrecip;
 	}
 }
+
