@@ -1,22 +1,22 @@
 {
-	"tipoSolicitud": "formato",
-	"tipoFormato": "json"
+	"solicitud": "formato",
+	"formato": "json"
 }
 
 {
-	"tipoSolicitud": "formato", 
-	"tipoFormato": "XML"
+	"solicitud": "formato", 
+	"formato": "XML"
 }
 
 {
-	"tipoSolicitud": "frecuencia",
+	"solicitud": "frecuencia",
 	"periodo": "2000"
 }
 
 {
-	"tipoSolicitud": "parada"
+	"solicitud": "stop"
 }
 
 {
-	"tipoSolicitud": "continuacion"
+	"solicitud": "continue"
 }

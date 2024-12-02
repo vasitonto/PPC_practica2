@@ -2,13 +2,18 @@ package servidor;
 
 public class Solicitud {
 	private String tipo;
-	private int periodo;
+	private int Intervalo;
+	private String formato;
 	
 	public String getTipo() {
 		return tipo;
 	}
 	
-	public int getPeriodo() {
-		return periodo;
+	public int getIntervalo() {
+		return Intervalo;
+	}
+	
+	public String getFormato() {
+		return formato;
 	}
 }

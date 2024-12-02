@@ -1,20 +1,11 @@
 package servidor;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
+import java.io.IOException; 
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
 
 public class Server extends Thread{
 	
@@ -27,11 +18,20 @@ public class Server extends Thread{
 	private InetSocketAddress BCADDR;
 	private MulticastSocket BCSocket;
 	private DatagramSocket CTRLSocket;
-	private String[] serverID = new String[2];
+	//	este array contiene la siguiente información
+	// 	posicion 0: id del servidor
+	// posicion 1: tipo del servidor [0: agua, 1: viento, 2: precipitaciones]
+	// posicion 2: formato de mensajes [0: xml, 1: json]
+	// posicion 3: 1/0 si está a 0 envia mensajes, si está a 0 no
+	// posicion 4: intervalo de tiempo en ms durante el cual espera entre mensajes
+	private int[] datos = new int[5];
 	
-	public Server(String id, String tipo, int escucha){
-		this.serverID[0] = id;
-		this.serverID[1] = tipo;
+	public Server(int id, int tipo, int escucha){
+		this.datos[0] = id;
+		this.datos[1] = tipo;
+		this.datos[2] = 0;
+		this.datos[3] = 0;
+		this.datos[4] = 3000;
 		int puerto1 = BCSocketPort;
 //		int puerto2 = CtrlSocketPort;
 		while(true) {
@@ -60,56 +60,30 @@ public class Server extends Thread{
 	
 	
 	public static void main(String[] args) throws IOException {
-		Server server = new Server("1", "agua", 4446);
+		Server server = new Server(1, 0, 4446);
 		server.BCSocket.joinGroup(server.BCADDR, NetworkInterface.getByName(grupoMulticast));
-		ServerQueryResponder responder = new ServerQueryResponder(server.CTRLSocket);
+		ServerQueryResponder responder = new ServerQueryResponder(server.CTRLSocket, server.datos);
 		// TODO cambiar el nombre del servidor
-		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.serverID);
+		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.datos);
 		responder.start();
 		broadcaster.start();
 		System.out.println("s1 ehcho");
 		
-		Server server2 = new Server("2", "viento", 4447);
+		Server server2 = new Server(2, 1, 4447);
 		server2.BCSocket.joinGroup(server2.BCADDR, NetworkInterface.getByName(grupoMulticast));
-		ServerQueryResponder responder2 = new ServerQueryResponder(server2.CTRLSocket);
-		ServerBroadcaster broadcaster2 = new ServerBroadcaster(server2.BCADDR, server2.BCSocket, server2.serverID);
+		ServerQueryResponder responder2 = new ServerQueryResponder(server2.CTRLSocket, server2.datos);
+		ServerBroadcaster broadcaster2 = new ServerBroadcaster(server2.BCADDR, server2.BCSocket, server2.datos);
 		responder2.start();
 		broadcaster2.start();
 		
-		Server server3 = new Server("3", "precipitacion", 4448);
+		Server server3 = new Server(3, 2, 4448);
 		server3.BCSocket.joinGroup(server3.BCADDR, NetworkInterface.getByName(grupoMulticast));
-		ServerQueryResponder responder3 = new ServerQueryResponder(server3.CTRLSocket);
-		ServerBroadcaster broadcaster3 = new ServerBroadcaster(server3.BCADDR, server3.BCSocket, server3.serverID);
+		ServerQueryResponder responder3 = new ServerQueryResponder(server3.CTRLSocket, server3.datos);
+		ServerBroadcaster broadcaster3 = new ServerBroadcaster(server3.BCADDR, server3.BCSocket, server3.datos);
 		responder3.start();
 		broadcaster3.start();
 		System.out.println("hola");
 	}
 	
-	
-//	public void run(Server server){
-//		System.out.println("servidor iniciado");
-//		try {
-//			this.BCSocket.joinGroup(this.BCADDR, NetworkInterface.getByName(grupoMulticast));
-//		} catch (SocketException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		} catch (IOException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-//		ServerQueryResponder responder = new ServerQueryResponder(this.CTRLSocket);
-//		ServerBroadcaster broadcaster = new ServerBroadcaster(this.BCADDR, this.BCSocket, this.tipoServer);
-//		responder.start();
-//		broadcaster.start();
-//		boolean running = true;
-//		while (running) {
-//            try {
-//                Thread.sleep(1000); // Simulación de trabajo del servidor
-//            } catch (InterruptedException e) {
-//                System.out.println("El servidor fue interrumpido.");
-//                running = false;
-//            }
-//		}
-//	}
 }
 
