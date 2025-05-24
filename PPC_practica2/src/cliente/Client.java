@@ -2,6 +2,8 @@ package cliente;
 
 import java.awt.BorderLayout; 
 import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.BufferedReader;  
@@ -36,6 +38,20 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import java.awt.GridLayout;
+import java.awt.GridBagLayout;
+import javax.swing.JLabel;
+import java.awt.GridBagConstraints;
+import javax.swing.JComboBox;
+import java.awt.Insets;
+import javax.swing.JButton;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.border.TitledBorder;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.BoxLayout;
+import java.awt.Component;
+import java.awt.FlowLayout;
 
 public class Client extends JFrame implements Runnable{
 		
@@ -53,9 +69,20 @@ public class Client extends JFrame implements Runnable{
 	private JFrame consola;
 	private JPanel contentPane;
 	private JScrollPane salidaMensajes;
-	private JTextArea textAreaEntrada;
 	private JTextArea textAreaSalida;
 	private String command;
+	private JPanel panel;
+	private JLabel lista_lbl;
+	private JComboBox<String> comboBox;
+	private JButton btnStartStop;
+	private JButton btnXML;
+	private JButton btnJSON;
+	private JButton btnLimpiarTerminal;
+	private JButton btnSalir;
+	private JLabel lblNewLabel;
+	private JPanel panel_1;
+	private JTextField txtMs;
+	private JButton btnCambiarFrecuencia;
  
     public Client() {
     	// ################# CODIGO DE SOCKETS ###############
@@ -76,7 +103,7 @@ public class Client extends JFrame implements Runnable{
     	consola = new JFrame("Consola Cliente"); // Creamos la ventana
         consola.setSize(400, 300);
     	consola.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    	consola.setBounds(100, 100, 450, 300);
+    	consola.setBounds(300, 300, 750, 500);
     	contentPane = new JPanel();
     	contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
     	
@@ -84,7 +111,7 @@ public class Client extends JFrame implements Runnable{
     	contentPane.setLayout(new BorderLayout(0, 0));
     	
     	JSplitPane splitPane = new JSplitPane();
-    	splitPane.setResizeWeight(0.5);
+    	splitPane.setResizeWeight(0.8);
     	splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
     	contentPane.add(splitPane, BorderLayout.CENTER);
     	
@@ -96,16 +123,112 @@ public class Client extends JFrame implements Runnable{
     	salidaMensajes.setAutoscrolls(true);
     	splitPane.setLeftComponent(salidaMensajes);
     	
-    	textAreaEntrada = new JTextArea();
-    	textAreaEntrada.setLineWrap(true);
-    	textAreaEntrada.setWrapStyleWord(true);
-    	DefaultCaret caret = (DefaultCaret)textAreaEntrada.getCaret();
-    	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-    	JScrollPane scrollPaneEntrada = new JScrollPane(textAreaEntrada);
-    	scrollPaneEntrada.setAutoscrolls(true);
-    	splitPane.setRightComponent(scrollPaneEntrada);
+    	panel = new JPanel();
+    	panel.setBorder(new TitledBorder(null, "Panel de Control", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+    	splitPane.setRightComponent(panel);
+    	GridBagLayout gbl_panel = new GridBagLayout();
+    	gbl_panel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    	gbl_panel.rowHeights = new int[]{0, 0, 0, 0};
+    	gbl_panel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+    	gbl_panel.rowWeights = new double[]{0.0, 0.0, 1.0, Double.MIN_VALUE};
+    	panel.setLayout(gbl_panel);
     	
-    	anadirKeyListener();
+    	btnLimpiarTerminal = new JButton("Limpiar Mensajes");
+    	GridBagConstraints gbc_btnLimpiarTerminal = new GridBagConstraints();
+    	gbc_btnLimpiarTerminal.insets = new Insets(0, 0, 5, 5);
+    	gbc_btnLimpiarTerminal.gridx = 7;
+    	gbc_btnLimpiarTerminal.gridy = 0;
+    	btnLimpiarTerminal.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			textAreaSalida.setText("");
+    		}
+    	});
+    	panel.add(btnLimpiarTerminal, gbc_btnLimpiarTerminal);
+    	
+    	btnSalir = new JButton("Salir");
+    	GridBagConstraints gbc_btnSalir = new GridBagConstraints();
+    	gbc_btnSalir.insets = new Insets(0, 0, 5, 0);
+    	gbc_btnSalir.gridx = 9;
+    	gbc_btnSalir.gridy = 0;
+    	btnSalir.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			textAreaSalida.append("Adiós... :)");
+    			try {
+    				Thread.sleep(1000);
+    			} catch (InterruptedException b) {
+    				b.printStackTrace();
+    			}
+    			System.exit(0);
+    		}
+    	});
+    	panel.add(btnSalir, gbc_btnSalir);
+    	
+    	lista_lbl = new JLabel("Selecciona un servidor de la lista");
+    	GridBagConstraints gbc_lista_lbl = new GridBagConstraints();
+    	gbc_lista_lbl.insets = new Insets(0, 0, 5, 5);
+    	gbc_lista_lbl.gridx = 1;
+    	gbc_lista_lbl.gridy = 1;
+    	panel.add(lista_lbl, gbc_lista_lbl);
+    	
+    	lblNewLabel = new JLabel("Introduce los ms");
+    	GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
+    	gbc_lblNewLabel.fill = GridBagConstraints.VERTICAL;
+    	gbc_lblNewLabel.insets = new Insets(0, 0, 5, 5);
+    	gbc_lblNewLabel.gridx = 5;
+    	gbc_lblNewLabel.gridy = 1;
+    	panel.add(lblNewLabel, gbc_lblNewLabel);
+    	
+    	comboBox = new JComboBox<>();
+    	comboBox.setModel(new DefaultComboBoxModel(new String[] {"Servidor 1", "Servidor 2", "Servidor 3"}));
+    	comboBox.setSelectedIndex(0);
+    	comboBox.setEditable(false);
+    	GridBagConstraints gbc_comboBox = new GridBagConstraints();
+    	gbc_comboBox.insets = new Insets(0, 0, 0, 5);
+    	gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
+    	gbc_comboBox.gridx = 1;
+    	gbc_comboBox.gridy = 2;
+    	panel.add(comboBox, gbc_comboBox);
+    	
+    	btnStartStop = new JButton("Start/Stop");
+    	GridBagConstraints gbc_btnStartStop = new GridBagConstraints();
+    	gbc_btnStartStop.insets = new Insets(0, 0, 0, 5);
+    	gbc_btnStartStop.gridx = 3;
+    	gbc_btnStartStop.gridy = 2;
+    	panel.add(btnStartStop, gbc_btnStartStop);
+    	
+    	panel_1 = new JPanel();
+    	GridBagConstraints gbc_panel_1 = new GridBagConstraints();
+    	gbc_panel_1.insets = new Insets(0, 0, 0, 5);
+    	gbc_panel_1.fill = GridBagConstraints.BOTH;
+    	gbc_panel_1.gridx = 5;
+    	gbc_panel_1.gridy = 2;
+    	panel.add(panel_1, gbc_panel_1);
+    	panel_1.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+    	
+    	txtMs = new JTextField();
+    	txtMs.setText("1000 ms");
+    	panel_1.add(txtMs);
+    	txtMs.setColumns(10);
+    	
+    	btnCambiarFrecuencia = new JButton("Cambiar Freq.");
+    	btnCambiarFrecuencia.setAlignmentX(Component.CENTER_ALIGNMENT);
+    	panel_1.add(btnCambiarFrecuencia);
+    	
+    	btnXML = new JButton("Env\u00EDa XML");
+    	GridBagConstraints gbc_btnXML = new GridBagConstraints();
+    	gbc_btnXML.insets = new Insets(0, 0, 0, 5);
+    	gbc_btnXML.gridx = 7;
+    	gbc_btnXML.gridy = 2;
+    	panel.add(btnXML, gbc_btnXML);
+    	
+    	btnJSON = new JButton("Env\u00EDa JSON");
+    	GridBagConstraints gbc_btnJSON = new GridBagConstraints();
+    	gbc_btnJSON.gridx = 9;
+    	gbc_btnJSON.gridy = 2;
+    	panel.add(btnJSON, gbc_btnJSON);
+    	
     	
     	try {
     		this.consola.setVisible(true);
@@ -113,38 +236,6 @@ public class Client extends JFrame implements Runnable{
     		e.printStackTrace();
     	}
     	
-    }
-        
-    private void anadirKeyListener() {
-    	textAreaEntrada.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    command = getTextoLinea();
-                    synchronized(textAreaEntrada) {
-                    	textAreaEntrada.notify();
-                    }
-                }
-            }
-        });
-    }
-    
-    private String getTextoLinea() {
-        int curPos = textAreaEntrada.getCaretPosition();
-        
-        // Obtener el número de línea en la que se encuentra el cursor
-        try {
-            javax.swing.text.Document doc = textAreaEntrada.getDocument();
-            int linea = textAreaEntrada.getLineOfOffset(curPos); // Número de línea
-            int inicioLinea = textAreaEntrada.getLineStartOffset(linea); // Inicio de la línea
-            int finLinea = textAreaEntrada.getLineEndOffset(linea); // Fin de la línea
-
-            // Obtener el texto de esa línea
-            return doc.getText(inicioLinea, finLinea - inicioLinea);
-        } catch (BadLocationException e) {
-            e.printStackTrace();
-            return "";
-        }
     }
     
     public void recibePaquete() {
@@ -172,70 +263,11 @@ public class Client extends JFrame implements Runnable{
 			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), serverPorts[control[0]]);
 			socketCtrl.send(resp); 
 			socketCtrl.receive(resp);
-			textAreaEntrada.append(new String(resp.getData(), 0, resp.getLength()).concat("\n"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
     
-    private int terminalCliente() {
-    	boolean print = true;
-    	textAreaEntrada.append("Teclea \"help\" para ver la lista de comandos.\n");
-    	while(true) {
-    		if(print) {
-    			textAreaEntrada.append("Esperando input...:\n");
-    		}
-			synchronized (textAreaEntrada) {
-	            try {
-	                // El hilo se bloquea aquí hasta que se presiona Enter
-	                textAreaEntrada.wait();
-	            } catch (InterruptedException e) {
-	                e.printStackTrace();
-	            }
-			}
-			
-			switch (command) {
-			case "exit":
-				textAreaEntrada.append("Adiós... :)");
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				System.exit(0);
-				
-			case "control":				
-				enviaControl();
-				break;
-				
-			case "help":
-				textAreaEntrada.append("exit - termina el programa.\n"
-						+ "control - envía mensajes de control al servidor\n"
-						+ "clear - limpia la terminal\n" 
-						+ "clear terminal - limpia la terminal de arriba\n"
-						+ "help - muestra esta ayuda\n");
-				break;
-				
-			case "clear":
-				textAreaEntrada.setText("");
-				break;
-				
-			case "clear terminal":
-				textAreaSalida.setText("");
-				break;
-				
-			default:
-				textAreaEntrada.append("No se esperaba esa palabra, inténtalo de nuevo...\n");
-				break;
-			}
-			
-    	}
-    }
-    
-    public void consolePrint(String texto) {
-    	textAreaEntrada.append(texto+"\r\n");
-    	textAreaEntrada.setCaretPosition(textAreaEntrada.getDocument().getLength());
-    }
     
     public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Client());
@@ -249,7 +281,6 @@ public class Client extends JFrame implements Runnable{
 			e.printStackTrace();
 		}
     	ExecutorService exec = Executors.newFixedThreadPool(2);
-    	Future<Integer> senalTerminal = exec.submit(() -> terminalCliente());
     	exec.submit(() -> recibePaquete());
     	try {
 			
@@ -326,107 +357,13 @@ public class Client extends JFrame implements Runnable{
 		}
     }
     
-    private int[] procesaControl() {
-    	int[] cmd = new int[3];
-    	String input;
-    	// TODO este codigo APESTA hay que pensar una forma mejor de hacer esto
-    	while(true) {
-    		textAreaEntrada.append("Bienvenido a la terminal de control.\nIntroduce el servidor (s1, s2, s3).\nTambién puedes teclear \"help\" para ver las opciones.\n");
-    		synchronized (textAreaEntrada) {
-                try {
-                    // El hilo se bloquea aquí hasta que se presiona Enter
-                    textAreaEntrada.wait();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-    		}
-    		input = getTextoLinea();
-    		switch(input) {
-    		case "help":
-    			textAreaEntrada.append("Primero teclea el servidor al que quieras enviar el mensaje de control, y luego teclea la orden que quieres enviar.\n"
-    					+ "Por ejemplo: s1 json, s2 stop...\nLas opciones son las siguientes:\n"
-    					+ "s1\t- envía al servidor 1\ns2\t- envía al servidor 2\ns3\t- envía al servidor 3\n"
-    					+ "json\t- indica al servidor que cambie a formato json\nxml\t- indica al servidor que cambie a formato xml\n"
-    					+ "stop\t- indica al servidor que pare\ncontinue\t- indica al servidor que continúe enviando mensajes\n"
-    					+ "freq\t- introduce el numero en ms para indicar cada cuanto tiempo quieres recibir mensajes de ese servidor.\n");
-    			continue;
-    		case "s1":
-    			cmd[0] = 0;
-    			break;
-    		case "s2":
-    			cmd[0] = 1;
-    			break;
-    		case "s3":
-    			cmd[0] = 2;
-    			break;
-    		default:
-    			textAreaEntrada.append("No se ha reconocido el servidor, inténtalo de nuevo.\n");    	
-    		}
-    		break;
-    	}
-    	textAreaEntrada.append("enviando al servidor " + input + "\nAhora introduce la orden\n");
-    		
-    	while(true) {
-			synchronized (textAreaEntrada) {
-	            try {
-	                // El hilo se bloquea aquí hasta que se presiona Enter
-	                textAreaEntrada.wait();
-	            } catch (InterruptedException e) {
-	                e.printStackTrace();
-	            }
-			}
-			input = getTextoLinea();
-			switch(input) {
-			case "json":
-				cmd[1] = 0;
-				break;
-			case "xml":
-				cmd[1] = 1;
-				break;
-			case "stop":
-				cmd[1] = 2;
-				break;
-				
-			case "continue":
-				cmd[1] = 3;
-				break;
-				
-			case "freq":
-				cmd[1] = 4;
-				textAreaEntrada.append("Introduce los ms:\n");
-				synchronized (textAreaEntrada) {
-		            try {
-		                // El hilo se bloquea aquí hasta que se presiona Enter
-		                textAreaEntrada.wait();
-		            } catch (InterruptedException e) {
-		                e.printStackTrace();
-		            }
-				}
-				input = getTextoLinea();
-				while(true) {
-					if(parseMS(input)) {
-						cmd[2] = Integer.parseInt(input);
-						break;
-					}else {
-						textAreaEntrada.append("Eso no parece un numero no? Inténtalo otra vez...\n");
-						continue;
-					}
-				}
-			default:
-				textAreaEntrada.append("No se ha reconocido el comando...Introduce un comando correcto\n");
-			}
-    		break;
-    	}
-    	return cmd;
-    }
-    
-    public boolean parseMS(String input) {
-    	try {
-            Integer.parseInt(input); // Intenta convertir el String a un entero
-            return true; // Es un entero válido
-        } catch (NumberFormatException e) {
-            return false; // No es un entero
-        }
-    }
+//    public boolean parseMS(String input) {
+//    	try {
+//            Integer.parseInt(input); // Intenta convertir el String a un entero
+//            return true; // Es un entero válido
+//        } catch (NumberFormatException e) {
+//            return false; // No es un entero
+//        }
+//    }
 }
 
