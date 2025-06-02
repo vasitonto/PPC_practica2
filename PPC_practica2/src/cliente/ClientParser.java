@@ -21,28 +21,29 @@ public class ClientParser {
 	    return doc;
 	}
 	
-		public static String creaControl(int tipo, int dato) {
-			String mensaje;
-			switch(tipo) {
-			case 0:
-				mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"json\"}";
-				break;
-			case 1:
-				mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"xml\"}";
-				break;
-			case 2:
-				mensaje = "{ \"solicitud\": \"stop\"}";
-				break;
-			case 3:
-				mensaje = "{ \"solicitud\": \"continue\"}";
-				break;
-			case 4:
-				mensaje = "{ \"solicitud\": \"cambioFreq\", \"intervalo\": \"" + dato + "\"}";
-				break;
-			default:
-				mensaje = "{ \"solicitud\": \"hello\"}";
-				break;
-			}
-			return mensaje;
+	// crea un mensaje de control según el tipo que sea, puede incluir un dato para el cambio de frecuencia
+	public static String creaControl(ControlCodes codigo, int dato) {
+		String mensaje;
+		switch(codigo) {
+		case STOP:
+			mensaje = "{ \"solicitud\": \"stop\"}";
+			break;
+		case CONTINUE:
+			mensaje = "{ \"solicitud\": \"continue\"}";
+			break;
+		case SEND_JSON:
+			mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"json\"}";
+			break;
+		case SEND_XML:
+			mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"xml\"}";
+			break;
+		case MOD_FREQ:
+			mensaje = "{ \"solicitud\": \"cambioFreq\", \"intervalo\": \"" + dato + "\"}";
+			break;
+		default:
+			mensaje = "{ \"solicitud\": \"hello\"}";
+			break;
 		}
+		return mensaje;
+	}
 }

@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +53,8 @@ import javax.swing.SwingConstants;
 import javax.swing.BoxLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import javax.swing.Box;
+import java.awt.Dimension;
 
 public class Client extends JFrame implements Runnable{
 		
@@ -81,8 +84,12 @@ public class Client extends JFrame implements Runnable{
 	private JButton btnSalir;
 	private JLabel lblNewLabel;
 	private JPanel panel_1;
-	private JTextField txtMs;
+	private JTextField txtFieldMs;
 	private JButton btnCambiarFrecuencia;
+	private JPanel panel_2;
+	private JButton btnStop;
+	private Component rigidArea;
+	private JLabel lblErrorMs;
  
     public Client() {
     	// ################# CODIGO DE SOCKETS ###############
@@ -127,16 +134,16 @@ public class Client extends JFrame implements Runnable{
     	panel.setBorder(new TitledBorder(null, "Panel de Control", TitledBorder.LEADING, TitledBorder.TOP, null, null));
     	splitPane.setRightComponent(panel);
     	GridBagLayout gbl_panel = new GridBagLayout();
-    	gbl_panel.columnWidths = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    	gbl_panel.rowHeights = new int[]{0, 0, 0, 0};
-    	gbl_panel.columnWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
+    	gbl_panel.columnWidths = new int[]{0, 0, 75, 94, 83, 0, 0, 0};
+    	gbl_panel.rowHeights = new int[]{0, 64, 49, 0};
+    	gbl_panel.columnWeights = new double[]{0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, Double.MIN_VALUE};
     	gbl_panel.rowWeights = new double[]{0.0, 0.0, 1.0, Double.MIN_VALUE};
     	panel.setLayout(gbl_panel);
     	
     	btnLimpiarTerminal = new JButton("Limpiar Mensajes");
     	GridBagConstraints gbc_btnLimpiarTerminal = new GridBagConstraints();
     	gbc_btnLimpiarTerminal.insets = new Insets(0, 0, 5, 5);
-    	gbc_btnLimpiarTerminal.gridx = 7;
+    	gbc_btnLimpiarTerminal.gridx = 4;
     	gbc_btnLimpiarTerminal.gridy = 0;
     	btnLimpiarTerminal.addActionListener(new ActionListener() {
     		@Override
@@ -149,7 +156,7 @@ public class Client extends JFrame implements Runnable{
     	btnSalir = new JButton("Salir");
     	GridBagConstraints gbc_btnSalir = new GridBagConstraints();
     	gbc_btnSalir.insets = new Insets(0, 0, 5, 0);
-    	gbc_btnSalir.gridx = 9;
+    	gbc_btnSalir.gridx = 6;
     	gbc_btnSalir.gridy = 0;
     	btnSalir.addActionListener(new ActionListener() {
     		@Override
@@ -165,67 +172,99 @@ public class Client extends JFrame implements Runnable{
     	});
     	panel.add(btnSalir, gbc_btnSalir);
     	
-    	lista_lbl = new JLabel("Selecciona un servidor de la lista");
+    	lista_lbl = new JLabel("Selecciona un servidor");
     	GridBagConstraints gbc_lista_lbl = new GridBagConstraints();
     	gbc_lista_lbl.insets = new Insets(0, 0, 5, 5);
     	gbc_lista_lbl.gridx = 1;
     	gbc_lista_lbl.gridy = 1;
     	panel.add(lista_lbl, gbc_lista_lbl);
     	
-    	lblNewLabel = new JLabel("Introduce los ms");
-    	GridBagConstraints gbc_lblNewLabel = new GridBagConstraints();
-    	gbc_lblNewLabel.fill = GridBagConstraints.VERTICAL;
-    	gbc_lblNewLabel.insets = new Insets(0, 0, 5, 5);
-    	gbc_lblNewLabel.gridx = 5;
-    	gbc_lblNewLabel.gridy = 1;
-    	panel.add(lblNewLabel, gbc_lblNewLabel);
-    	
     	comboBox = new JComboBox<>();
     	comboBox.setModel(new DefaultComboBoxModel(new String[] {"Servidor 1", "Servidor 2", "Servidor 3"}));
     	comboBox.setSelectedIndex(0);
     	comboBox.setEditable(false);
     	GridBagConstraints gbc_comboBox = new GridBagConstraints();
+    	gbc_comboBox.ipadx = 20;
     	gbc_comboBox.insets = new Insets(0, 0, 0, 5);
     	gbc_comboBox.fill = GridBagConstraints.HORIZONTAL;
     	gbc_comboBox.gridx = 1;
     	gbc_comboBox.gridy = 2;
     	panel.add(comboBox, gbc_comboBox);
     	
-    	btnStartStop = new JButton("Start/Stop");
-    	GridBagConstraints gbc_btnStartStop = new GridBagConstraints();
-    	gbc_btnStartStop.insets = new Insets(0, 0, 0, 5);
-    	gbc_btnStartStop.gridx = 3;
-    	gbc_btnStartStop.gridy = 2;
-    	panel.add(btnStartStop, gbc_btnStartStop);
+    	panel_2 = new JPanel();
+    	GridBagConstraints gbc_panel_2 = new GridBagConstraints();
+    	gbc_panel_2.insets = new Insets(0, 10, 0, 10);
+    	gbc_panel_2.fill = GridBagConstraints.BOTH;
+    	gbc_panel_2.gridx = 2;
+    	gbc_panel_2.gridy = 2;
+    	panel.add(panel_2, gbc_panel_2);
+    	
+    	btnStop = new JButton("Stop");
+    	btnStop.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+    	btnStop.setAlignmentX(Component.CENTER_ALIGNMENT);
+    	btnStop.addActionListener(new ActionListener() {
+    		public void actionPerformed(ActionEvent e) {
+    			enviaControl(ControlCodes.STOP);
+    		}
+    	});
+    	panel_2.setLayout(new BoxLayout(panel_2, BoxLayout.Y_AXIS));
+    	panel_2.add(btnStop);
+    	
+    	rigidArea = Box.createRigidArea(new Dimension(20, 20));
+    	panel_2.add(rigidArea);
+    	
+    	btnStartStop = new JButton("Continua");
+    	btnStartStop.setAlignmentX(Component.CENTER_ALIGNMENT);
+    	panel_2.add(btnStartStop);
+    	btnStartStop.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				enviaControl(ControlCodes.CONTINUE);
+				
+			}
+		});
     	
     	panel_1 = new JPanel();
+    	panel_1.setToolTipText("Introduce el intervalo de tiempo en ms que quieres que espere el servidor entre mensajes ");
     	GridBagConstraints gbc_panel_1 = new GridBagConstraints();
-    	gbc_panel_1.insets = new Insets(0, 0, 0, 5);
+    	gbc_panel_1.insets = new Insets(0, 10, 0, 10);
     	gbc_panel_1.fill = GridBagConstraints.BOTH;
-    	gbc_panel_1.gridx = 5;
+    	gbc_panel_1.gridx = 3;
     	gbc_panel_1.gridy = 2;
     	panel.add(panel_1, gbc_panel_1);
-    	panel_1.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+    	panel_1.setLayout(new BoxLayout(panel_1, BoxLayout.Y_AXIS));
     	
-    	txtMs = new JTextField();
-    	txtMs.setText("1000 ms");
-    	panel_1.add(txtMs);
-    	txtMs.setColumns(10);
+    	lblNewLabel = new JLabel("Introduce los ms");
+    	lblNewLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    	panel_1.add(lblNewLabel);
+    	
+    	txtFieldMs = new JTextField();
+    	txtFieldMs.setHorizontalAlignment(SwingConstants.LEFT);
+    	txtFieldMs.setToolTipText("Introduce el intervalo de tiempo en ms que quieres que espere el servidor entre mensajes ");
+    	txtFieldMs.setText("3000");
+    	panel_1.add(txtFieldMs);
+    	txtFieldMs.setColumns(10);
     	
     	btnCambiarFrecuencia = new JButton("Cambiar Freq.");
     	btnCambiarFrecuencia.setAlignmentX(Component.CENTER_ALIGNMENT);
     	panel_1.add(btnCambiarFrecuencia);
     	
+    	lblErrorMs = new JLabel("");
+    	lblErrorMs.setAlignmentX(Component.CENTER_ALIGNMENT);
+    	lblErrorMs.setVisible(false);
+    	panel_1.add(lblErrorMs);
+    	
     	btnXML = new JButton("Env\u00EDa XML");
     	GridBagConstraints gbc_btnXML = new GridBagConstraints();
     	gbc_btnXML.insets = new Insets(0, 0, 0, 5);
-    	gbc_btnXML.gridx = 7;
+    	gbc_btnXML.gridx = 4;
     	gbc_btnXML.gridy = 2;
     	panel.add(btnXML, gbc_btnXML);
     	
     	btnJSON = new JButton("Env\u00EDa JSON");
     	GridBagConstraints gbc_btnJSON = new GridBagConstraints();
-    	gbc_btnJSON.gridx = 9;
+    	gbc_btnJSON.gridx = 6;
     	gbc_btnJSON.gridy = 2;
     	panel.add(btnJSON, gbc_btnJSON);
     	
@@ -255,12 +294,27 @@ public class Client extends JFrame implements Runnable{
     	}
     }
     
-    public void enviaControl() {
-    	int[] control = procesaControl();
-    	byte [] bufResp = ClientParser.creaControl(control[1], control[2]).getBytes();
+    public void enviaControl(ControlCodes codigo) {
+    	int serverSelection = comboBox.getSelectedIndex();
+    	
+    	byte [] bufResp;
+    	if(codigo == ControlCodes.MOD_FREQ) {
+    		int dato = 0;
+    		try {
+				dato = Integer.parseInt(txtFieldMs.getText());
+			} catch (NumberFormatException e) {
+				lblErrorMs.setText("No se reconocen los ms");
+				lblErrorMs.setVisible(true);
+				return;
+			}
+    		bufResp = ClientParser.creaControl(codigo, dato).getBytes();
+    	}
+    	else bufResp = ClientParser.creaControl(codigo, 0).getBytes();
+    	
 		DatagramPacket resp;
 		try {
-			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), serverPorts[control[0]]);
+			textAreaSalida.append("enviando control: " + codigo + "al " + (String) comboBox.getSelectedItem());
+			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), serverPorts[serverSelection]);
 			socketCtrl.send(resp); 
 			socketCtrl.receive(resp);
 		} catch (IOException e) {
@@ -280,24 +334,24 @@ public class Client extends JFrame implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    	ExecutorService exec = Executors.newFixedThreadPool(2);
+    	ExecutorService exec = Executors.newSingleThreadExecutor();
     	exec.submit(() -> recibePaquete());
-    	try {
-			
-    		if(senalTerminal.isDone()) {
-    			Integer fin = senalTerminal.get();
-    					if(fin == 0) {
-    						exec.shutdownNow();
-    					}
-    			
-    		}
-		} catch (InterruptedException | ExecutionException e) {
-			e.printStackTrace();
-		} finally {
-            if (!exec.isShutdown()) {
-                exec.shutdown(); // Asegurar que el ExecutorService se cierra
-            }
-        }
+//    	try {
+//			
+//    		if(senalTerminal.isDone()) {
+//    			Integer fin = senalTerminal.get();
+//    					if(fin == 0) {
+//    						exec.shutdownNow();
+//    					}
+//    			
+//    		}
+//		} catch (InterruptedException | ExecutionException e) {
+//			e.printStackTrace();
+//		} finally {
+//            if (!exec.isShutdown()) {
+//                exec.shutdown(); // Asegurar que el ExecutorService se cierra
+//            }
+//        }
     	
     }
     

@@ -1,5 +1,7 @@
 package cliente;
 
+import java.nio.charset.StandardCharsets;
+
 public class MensajeControl {
 	//estp dice chatgpt
 	public class ControlMessage {
