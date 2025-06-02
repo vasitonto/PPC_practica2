@@ -1,4 +1,4 @@
-package cliente;
+package Resources;
 
 public enum ControlCodes {
 	STOP,
@@ -6,5 +6,4 @@ public enum ControlCodes {
 	MOD_FREQ,
 	SEND_XML,
 	SEND_JSON
-	
 }

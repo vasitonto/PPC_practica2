@@ -1,16 +1,20 @@
 package servidor;
 
+import com.google.gson.JsonElement;
+
 public class Solicitud {
-	private String tipo;
-	private int Intervalo;
+	private String solicitud;
+	private Integer intervalo;
 	private String formato;
 	
+	public Solicitud(){};
+	
 	public String getTipo() {
-		return tipo;
+		return solicitud;
 	}
 	
 	public int getIntervalo() {
-		return Intervalo;
+		return intervalo;
 	}
 	
 	public String getFormato() {

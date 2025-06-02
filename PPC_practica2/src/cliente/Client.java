@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -39,6 +40,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import Resources.ControlCodes;
+
 import java.awt.GridLayout;
 import java.awt.GridBagLayout;
 import javax.swing.JLabel;
@@ -90,6 +94,7 @@ public class Client extends JFrame implements Runnable{
 	private JButton btnStop;
 	private Component rigidArea;
 	private JLabel lblErrorMs;
+	ExecutorService exec = Executors.newFixedThreadPool(2);
  
     public Client() {
     	// ################# CODIGO DE SOCKETS ###############
@@ -204,7 +209,7 @@ public class Client extends JFrame implements Runnable{
     	btnStop.setAlignmentX(Component.CENTER_ALIGNMENT);
     	btnStop.addActionListener(new ActionListener() {
     		public void actionPerformed(ActionEvent e) {
-    			enviaControl(ControlCodes.STOP);
+    			exec.submit(() -> enviaControl(ControlCodes.STOP));
     		}
     	});
     	panel_2.setLayout(new BoxLayout(panel_2, BoxLayout.Y_AXIS));
@@ -220,8 +225,7 @@ public class Client extends JFrame implements Runnable{
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				enviaControl(ControlCodes.CONTINUE);
-				
+				exec.submit(() -> enviaControl(ControlCodes.CONTINUE));
 			}
 		});
     	
@@ -313,10 +317,17 @@ public class Client extends JFrame implements Runnable{
     	
 		DatagramPacket resp;
 		try {
-			textAreaSalida.append("enviando control: " + codigo + "al " + (String) comboBox.getSelectedItem());
+			socketCtrl.setSoTimeout(5000);
+			
+			textAreaSalida.append("enviando control: " + codigo + " al " + (String) comboBox.getSelectedItem());
 			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), serverPorts[serverSelection]);
 			socketCtrl.send(resp); 
 			socketCtrl.receive(resp);
+			
+			SwingUtilities.invokeLater(() ->textAreaSalida.append(String.valueOf(resp.getData())));
+			
+		} catch(SocketTimeoutException sockEx) {
+			SwingUtilities.invokeLater(() ->textAreaSalida.append("No se ha recibido confirmación del servidor...\n\n"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -334,7 +345,6 @@ public class Client extends JFrame implements Runnable{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-    	ExecutorService exec = Executors.newSingleThreadExecutor();
     	exec.submit(() -> recibePaquete());
 //    	try {
 //			

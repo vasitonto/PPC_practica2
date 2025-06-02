@@ -30,6 +30,7 @@ public class ServerParser{
 	
 	public static Solicitud parseaCtrl(String query) {
 		Gson gson = new Gson();
+		
 		return gson.fromJson(query, Solicitud.class);
 	}
 	
