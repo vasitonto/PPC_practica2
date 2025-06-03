@@ -68,10 +68,10 @@ public class ServerParser{
 		return reportAgua;
 	}
 	
-	public static String getDatosSuelo(int id) {
-		String reportSuelo = "hola";
-		return reportSuelo;
-	}
+//	public static String getDatosSuelo(int id) {
+//		String reportSuelo = "hola";
+//		return reportSuelo;
+//	}
 	
 	public static String getDatosAire(int id, int format) {
 		String reportAire;

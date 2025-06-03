@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class Server extends Thread{
 	
@@ -24,14 +25,15 @@ public class Server extends Thread{
 	// posicion 2: formato de mensajes [0: xml, 1: json]
 	// posicion 3: 1/0 si está a 0 envia mensajes, si está a 0 no
 	// posicion 4: intervalo de tiempo en ms durante el cual espera entre mensajes
-	private int[] datos = new int[5];
+	private  AtomicIntegerArray datos;
 	
 	public Server(int id, int tipo, int escucha){
-		this.datos[0] = id;
-		this.datos[1] = tipo;
-		this.datos[2] = 0;
-		this.datos[3] = 0;
-		this.datos[4] = 3000;
+		this.datos = new AtomicIntegerArray(5);
+	    this.datos.set(0, id);
+	    this.datos.set(1, tipo);
+	    this.datos.set(2, 0);
+	    this.datos.set(3, 0);
+	    this.datos.set(4, 3000);
 		int puerto1 = BCSocketPort;
 //		int puerto2 = CtrlSocketPort;
 		while(true) {
@@ -84,6 +86,5 @@ public class Server extends Thread{
 		broadcaster3.start();
 		System.out.println("hola");
 	}
-	
 }
 

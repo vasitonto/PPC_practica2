@@ -7,13 +7,19 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class ServerQueryResponder extends Thread {
 	private DatagramSocket socket;
-	private int[] datos = new int[5];
+// 	posicion 0: id del servidor
+	// posicion 1: tipo del servidor [0: agua, 1: viento, 2: precipitaciones]
+	// posicion 2: formato de mensajes [0: xml, 1: json]
+	// posicion 3: 1/0 si está a 0 envia mensajes, si está a 0 no
+	// posicion 4: intervalo de tiempo en ms durante el cual espera entre mensajes
+	private AtomicIntegerArray datos;
 	
 	
-	public ServerQueryResponder(DatagramSocket socket, int[] datos) {
+	public ServerQueryResponder(DatagramSocket socket, AtomicIntegerArray datos) {
 		this.socket = socket;
 		this.datos = datos;
 	}
@@ -46,30 +52,22 @@ public class ServerQueryResponder extends Thread {
 			String form = sol.getFormato();
 			if(form.equals("xml")) {
 				synchronized (datos) {
-					this.datos[2] = 0;
+					this.datos.set(2, 0); 
 				}
 			}else {
-				synchronized (datos) {
-					this.datos[2] = 1;
-				}
+				this.datos.set(2, 1);
 			}
 			break;
 		case "stop":
-			synchronized (datos) {
-				this.datos[3] = 1;
-			}
+			this.datos.set(3, 1);
+			
 			break;
 		case "continue":
-			synchronized (datos) {
-				this.datos[3] = 0;
-			}
+			this.datos.set(3, 0);
 			break;
 		case "intervalo":
 			int interv = sol.getIntervalo();
-			synchronized (datos) {
-				datos[4] = interv;
-				
-			}
+			datos.set(4, interv);
 			break;
 		}
 	}
