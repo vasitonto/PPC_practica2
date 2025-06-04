@@ -33,36 +33,45 @@ public class ServerBroadcaster extends Thread{
 		int format;
 //		for(int i = 0; i < 3; i++) {
 		while (true) {
-			try {
-				String fecha = LocalDateTime.now().toString();
-				String hora = fecha.substring(11, 22);
-				synchronized (datos) {
+			if (datos.get(3) == 0) {
+				
+				try {
+					String fecha = LocalDateTime.now().toString();
+					String hora = fecha.substring(11, 22);
 					format = datos.get(2); // 0: xml, 1: json
+					
+					switch(datos.get(1)) {
+					case 0:
+						String aber = ServerParser.getDatosAgua(datos.get(0), format);
+						System.out.println("Server "+ datos.get(0) + " Enviando datos del agua");
+						buf = aber.getBytes();
+						break;
+					case 1:
+						buf = ServerParser.getDatosPrecip(datos.get(0), format).getBytes();
+						System.out.println("Server "+ datos.get(0) + " Enviando datos de precipitaciones");
+						break;
+					case 2:
+						buf = ServerParser.getDatosAire(datos.get(0), format).getBytes();
+						System.out.println("Server "+ datos.get(0) + " Enviando datos del viento");
+						break;
+					default: break;	
+					}
+					DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
+					socket.send(packet);
+					sleep(this.datos.get(4));
 				}
-				switch(datos.get(1)) {
-				case 0:
-					String aber = ServerParser.getDatosAgua(datos.get(0), format);
-					System.out.println("Server "+ datos.get(0) + " Enviando datos del agua");
-					buf = aber.getBytes();
-					break;
-				case 1:
-					buf = ServerParser.getDatosPrecip(datos.get(0), format).getBytes();
-					System.out.println("Server "+ datos.get(0) + " Enviando datos de precipitaciones");
-					break;
-				case 2:
-					buf = ServerParser.getDatosAire(datos.get(0), format).getBytes();
-					System.out.println("Server "+ datos.get(0) + " Enviando datos del viento");
-					break;
-				default: break;	
+				catch (IOException | InterruptedException e) {
+					e.printStackTrace();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				DatagramPacket packet = new DatagramPacket(buf, buf.length, BCADDR);
-				socket.send(packet);
-				sleep(this.datos.get(4));
-			} catch (IOException | InterruptedException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			} 
+			else
+				try {
+					sleep(this.datos.get(4));
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 		}
 	}
 	

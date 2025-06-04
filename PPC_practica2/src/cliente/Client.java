@@ -16,6 +16,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.Map;
@@ -253,6 +254,13 @@ public class Client extends JFrame implements Runnable{
     	btnCambiarFrecuencia = new JButton("Cambiar Freq.");
     	btnCambiarFrecuencia.setAlignmentX(Component.CENTER_ALIGNMENT);
     	panel_1.add(btnCambiarFrecuencia);
+    	btnCambiarFrecuencia.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exec.submit(() -> enviaControl(ControlCodes.MOD_FREQ));
+			}
+		});
     	
     	lblErrorMs = new JLabel("");
     	lblErrorMs.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -265,12 +273,26 @@ public class Client extends JFrame implements Runnable{
     	gbc_btnXML.gridx = 4;
     	gbc_btnXML.gridy = 2;
     	panel.add(btnXML, gbc_btnXML);
+    	btnXML.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exec.submit(() -> enviaControl(ControlCodes.SEND_XML));
+			}
+		});
     	
     	btnJSON = new JButton("Env\u00EDa JSON");
     	GridBagConstraints gbc_btnJSON = new GridBagConstraints();
     	gbc_btnJSON.gridx = 6;
     	gbc_btnJSON.gridy = 2;
     	panel.add(btnJSON, gbc_btnJSON);
+    	btnJSON.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exec.submit(() -> enviaControl(ControlCodes.SEND_JSON));
+			}
+		});
     	
     	
     	try {
@@ -287,7 +309,13 @@ public class Client extends JFrame implements Runnable{
 	    			DatagramPacket pak = new DatagramPacket(buf, buf.length);
 	    			socketListen.receive(pak);
 	    			String msg = new String(pak.getData(), 0, pak.getLength());
-	    			parsearPaquete(msg);
+	    			if(msg.startsWith("<")) {
+	    				textAreaSalida.append(ClientParser.parsearPaqueteXML(msg));
+	    			}
+	    			else
+	    				textAreaSalida.append(ClientParser.parsearPaqueteJSON(msg));
+	    			
+	    			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
 	//			} 
 	    	}
 	    	catch (IOException e) {
@@ -319,12 +347,15 @@ public class Client extends JFrame implements Runnable{
 		try {
 			socketCtrl.setSoTimeout(5000);
 			
-			textAreaSalida.append("enviando control: " + codigo + " al " + (String) comboBox.getSelectedItem());
+			textAreaSalida.append("enviando control: " + codigo + " al " + (String) comboBox.getSelectedItem() + "\n");
 			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), serverPorts[serverSelection]);
 			socketCtrl.send(resp); 
-			socketCtrl.receive(resp);
+			byte[] buf = new byte[256];
+			DatagramPacket ack = new DatagramPacket(buf, buf.length);
+			socketCtrl.receive(ack);
+			String ackStr = new String(ack.getData(), 0, ack.getLength());
 			
-			SwingUtilities.invokeLater(() ->textAreaSalida.append(String.valueOf(resp.getData())));
+			SwingUtilities.invokeLater(() ->textAreaSalida.append(ackStr + "\n"));
 			
 		} catch(SocketTimeoutException sockEx) {
 			SwingUtilities.invokeLater(() ->textAreaSalida.append("No se ha recibido confirmación del servidor...\n\n"));
@@ -346,88 +377,64 @@ public class Client extends JFrame implements Runnable{
 			e.printStackTrace();
 		}
     	exec.submit(() -> recibePaquete());
-//    	try {
+    }
+    
+    
+    	// esto ahora va en clientParser
+//    public void parsearPaquete(String msg) {
+//    	
+//		try {
+//			Document reportDoc = ClientParser.loadXMLFromString(msg);
 //			
-//    		if(senalTerminal.isDone()) {
-//    			Integer fin = senalTerminal.get();
-//    					if(fin == 0) {
-//    						exec.shutdownNow();
-//    					}
-//    			
-//    		}
-//		} catch (InterruptedException | ExecutionException e) {
+//			Element root = reportDoc.getDocumentElement();                
+//			// accedemos a los atribs. del nodo raíz
+//			String servername = root.getAttribute("servername");
+//			String formato = root.getAttribute("formato");
+//			String tipo = root.getAttribute("tipo");
+//			
+//			textAreaSalida.append(servername + " [formato: " + formato + ", datos: "+ tipo + "]: ");
+//			NodeList datosList = reportDoc.getElementsByTagName("datos");
+//			Node datosNode = datosList.item(0);
+//			NodeList listaValores= ((Element) datosNode).getElementsByTagName(tipo);
+//			Node nodoValores = listaValores.item(0);
+//			// según del tipo que sea el mensaje lo deberemos parsear de una forma u otra
+//			switch(tipo) {
+//			case "agua":
+//				// obtenemos el elemento "datos"
+//				
+//				// obtenemos los elementos dentro de "agua"
+//				
+//				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
+//				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
+//				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
+//				textAreaSalida.append("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph + "\n");
+//				break;
+//			
+//			case "aire":				
+//				// obtenemos los elementos para "viento"	
+//				String temperaturaViento = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
+//				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
+//				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
+//				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
+//				textAreaSalida.append("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad 
+//						+ "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h\n");
+//				break;
+//			
+//			case "precipitacion":
+//				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
+//				String intensidad = ((Element) nodoValores).getElementsByTagName("intensidad").item(0).getTextContent();
+//				String cantidad = ((Element) nodoValores).getElementsByTagName("cantidad").item(0).getTextContent();
+//				textAreaSalida.append("tipo: " + tipoPrecip + ", intensidad: " 
+//						+ intensidad + ", cantidad: " + cantidad + "mm\n" );
+//				break;
+//			
+//			default: break;
+//			}
+//			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
+//			
+//		} catch (ParserConfigurationException | SAXException | IOException e) {
 //			e.printStackTrace();
-//		} finally {
-//            if (!exec.isShutdown()) {
-//                exec.shutdown(); // Asegurar que el ExecutorService se cierra
-//            }
-//        }
-    	
-    }
-    
-    public void parsearPaquete(String msg) {
-    	
-		try {
-			Document reportDoc = ClientParser.loadXMLFromString(msg);
-			
-			Element root = reportDoc.getDocumentElement();                
-			// accedemos a los atribs. del nodo raíz
-			String servername = root.getAttribute("servername");
-			String formato = root.getAttribute("formato");
-			String tipo = root.getAttribute("tipo");
-			
-			textAreaSalida.append(servername + " [formato: " + formato + ", datos: "+ tipo + "]: ");
-			NodeList datosList = reportDoc.getElementsByTagName("datos");
-			Node datosNode = datosList.item(0);
-			NodeList listaValores= ((Element) datosNode).getElementsByTagName(tipo);
-			Node nodoValores = listaValores.item(0);
-			// según del tipo que sea el mensaje lo deberemos parsear de una forma u otra
-			switch(tipo) {
-			case "agua":
-				// obtenemos el elemento "datos"
-				
-				// obtenemos los elementos dentro de "agua"
-				
-				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
-				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
-				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
-				textAreaSalida.append("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph + "\n");
-				break;
-			
-			case "aire":				
-				// obtenemos los elementos para "viento"	
-				String temperaturaViento = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
-				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
-				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
-				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
-				textAreaSalida.append("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad 
-						+ "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h\n");
-				break;
-			
-			case "precipitacion":
-				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
-				String intensidad = ((Element) nodoValores).getElementsByTagName("intensidad").item(0).getTextContent();
-				String cantidad = ((Element) nodoValores).getElementsByTagName("cantidad").item(0).getTextContent();
-				textAreaSalida.append("tipo: " + tipoPrecip + ", intensidad: " 
-						+ intensidad + ", cantidad: " + cantidad + "mm\n" );
-				break;
-			
-			default: break;
-			}
-			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
-			
-		} catch (ParserConfigurationException | SAXException | IOException e) {
-			e.printStackTrace();
-		}
-    }
-    
-//    public boolean parseMS(String input) {
-//    	try {
-//            Integer.parseInt(input); // Intenta convertir el String a un entero
-//            return true; // Es un entero válido
-//        } catch (NumberFormatException e) {
-//            return false; // No es un entero
-//        }
+//		}
 //    }
 }
 

@@ -65,11 +65,9 @@ public class Server extends Thread{
 		Server server = new Server(1, 0, 4446);
 		server.BCSocket.joinGroup(server.BCADDR, NetworkInterface.getByName(grupoMulticast));
 		ServerQueryResponder responder = new ServerQueryResponder(server.CTRLSocket, server.datos);
-		// TODO cambiar el nombre del servidor
 		ServerBroadcaster broadcaster = new ServerBroadcaster(server.BCADDR, server.BCSocket, server.datos);
 		responder.start();
 		broadcaster.start();
-		System.out.println("s1 ehcho");
 		
 		Server server2 = new Server(2, 1, 4447);
 		server2.BCSocket.joinGroup(server2.BCADDR, NetworkInterface.getByName(grupoMulticast));
@@ -84,7 +82,6 @@ public class Server extends Thread{
 		ServerBroadcaster broadcaster3 = new ServerBroadcaster(server3.BCADDR, server3.BCSocket, server3.datos);
 		responder3.start();
 		broadcaster3.start();
-		System.out.println("hola");
 	}
 }
 

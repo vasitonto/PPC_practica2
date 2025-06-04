@@ -11,10 +11,15 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import Resources.ControlCodes;
 
@@ -29,31 +34,110 @@ public class ClientParser {
 	    return doc;
 	}
 	
-	// crea un mensaje de control según el tipo que sea, puede incluir un dato para el cambio de frecuencia
-	public static String creaControl(ControlCodes codigo, int dato) {
-//		String mensaje;
-//		switch(codigo) {
-//		case STOP:
-//			mensaje = "{ \"solicitud\": \"stop\"}";
-//			break;
-//		case CONTINUE:
-//			mensaje = "{ \"solicitud\": \"continue\"}";
-//			break;
-//		case SEND_JSON:
-//			mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"json\"}";
-//			break;
-//		case SEND_XML:
-//			mensaje = "{ \"solicitud\": \"formato\", \"formato\": \"xml\"}";
-//			break;
-//		case MOD_FREQ:
-//			mensaje = "{ \"solicitud\": \"cambioFreq\", \"intervalo\": \"" + dato + "\"}";
-//			break;
-//		default:
-//			mensaje = "{ \"solicitud\": \"hello\"}";
-//			break;
-//		}
-//		return mensaje;
+public static String parsearPaqueteXML(String msg) {
+		try {
+			Document reportDoc = ClientParser.loadXMLFromString(msg);
+			
+			Element root = reportDoc.getDocumentElement();                
+			// accedemos a los atribs. del nodo raíz
+			String servername = root.getAttribute("servername");
+			String formato = root.getAttribute("formato");
+			String tipo = root.getAttribute("tipo");
+			
+			String texto = servername + " [formato: " + formato + ", datos: "+ tipo + "]: ";
+			
+			NodeList datosList = reportDoc.getElementsByTagName("datos");
+			Node datosNode = datosList.item(0);
+			NodeList listaValores= ((Element) datosNode).getElementsByTagName(tipo);
+			Node nodoValores = listaValores.item(0);
+			// según del tipo que sea el mensaje lo deberemos parsear de una forma u otra
+			switch(tipo) {
+			case "agua":
+				// obtenemos el elemento "datos"
+				
+				// obtenemos los elementos dentro de "agua"
+				
+				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
+				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
+				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
+				texto += "temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph + "\n\n";
+				return texto;
+				
+			case "aire":				
+				// obtenemos los elementos para "viento"	
+				String temperaturaViento = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
+				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
+				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
+				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
+				texto += "temperatura: " + temperaturaViento + "ºC, humedad: " + humedad 
+						+ "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h\n\n";
+				return texto;
+				
+			case "precipitacion":
+				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
+				String intensidad = ((Element) nodoValores).getElementsByTagName("intensidad").item(0).getTextContent();
+				String cantidad = ((Element) nodoValores).getElementsByTagName("cantidad").item(0).getTextContent();
+				texto += "tipo: " + tipoPrecip + ", intensidad: " 
+						+ intensidad + ", cantidad: " + cantidad + "mm\n\n" ;
+				return texto;
+				
+			default: return "";
+			}
+//			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
+			
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			e.printStackTrace();
+		}
+		return "";
+    }
+	
+	public static String parsearPaqueteJSON(String msg) {
 		
+		JsonObject report = JsonParser.parseString(msg).getAsJsonObject();
+
+        String servername = report.get("servername").getAsString();
+        String formato = report.get("formato").getAsString();
+        String tipo = report.get("tipo").getAsString();
+
+        String texto = servername + " [formato: " + formato + ", datos: " + tipo + "]: ";
+
+        JsonObject datos = report.getAsJsonObject("datos");
+        JsonObject valores = datos.getAsJsonObject(tipo);
+
+        switch (tipo) {
+            case "agua":
+                int temperatura = valores.get("temperatura").getAsInt();
+                int nivel = valores.get("nivel").getAsInt();
+                String ph = valores.get("ph").getAsString();
+                texto += "temperatura: " + temperatura + "ºC, nivel: " + nivel + "cm, ph: " + ph + "\n\n";
+                break;
+
+            case "aire":
+                int tempAire = valores.get("temperatura").getAsInt();
+                int velocidad = valores.get("velocidad").getAsInt();
+                int humedad = valores.get("humedad").getAsInt();
+                String direccion = valores.get("direccion").getAsString();
+                texto += "temperatura: " + tempAire + "ºC, velocidad: " + velocidad + "km/h, CO2: " 
+                		+ humedad + "%, dirección: " + direccion + "\n\n";
+                break;
+
+            case "precipitaciones":
+            	String tipoPrecip = valores.get("tipo").getAsString();
+            	int intensidad = valores.get("intensidad").getAsInt();
+                int cantidad = valores.get("cantidad").getAsInt();
+                texto +=  "tipo: " + tipoPrecip + "intensidad: " + intensidad + "cantidad: " + cantidad + "mm\n\n";
+                break;
+
+            default:
+                texto += "tipo de datos no reconocido.\n\n";
+                break;
+        }
+
+        return texto;
+    }
+
+	// crea un mensaje de control según el tipo que sea, puede incluir un dato para el cambio de frecuencia
+	public static String creaControl(ControlCodes codigo, int dato) {		
 		Gson gson = new Gson();
 	    Map<String, Object> mensaje = new HashMap<>();
 

@@ -31,12 +31,13 @@ public class ServerQueryResponder extends Thread {
 				DatagramPacket query = new DatagramPacket(buf, buf.length);
 				socket.receive(query);
 				String querystr = new String(query.getData(), 0, query.getLength());
+				SocketAddress returnAddr = query.getSocketAddress();
 				System.out.println("Recibido: " + querystr);
 				procesaSol(ServerParser.parseaCtrl(querystr));
-				byte[] buf2 = new byte[512];
-				buf2 = "el server recibió el mensaje de control".getBytes();
-				System.out.println(query.getSocketAddress());
-				DatagramPacket ack = new DatagramPacket(buf2, buf2.length, new InetSocketAddress(InetAddress.getByName("192.168.1.14"), 5999));
+				String ackString = new String("Server "+ String.valueOf(datos.get(0)) + ": Se ha recibido el mensaje de control");
+				byte[] buf2 = new byte[256];
+				buf2 = ackString.getBytes();
+				DatagramPacket ack = new DatagramPacket(buf2, buf2.length, returnAddr);
 				socket.send(ack);
 			}
 			catch(IOException e) {
@@ -51,9 +52,7 @@ public class ServerQueryResponder extends Thread {
 		case "formato":
 			String form = sol.getFormato();
 			if(form.equals("xml")) {
-				synchronized (datos) {
-					this.datos.set(2, 0); 
-				}
+				this.datos.set(2, 0); 
 			}else {
 				this.datos.set(2, 1);
 			}
@@ -65,7 +64,7 @@ public class ServerQueryResponder extends Thread {
 		case "continue":
 			this.datos.set(3, 0);
 			break;
-		case "intervalo":
+		case "cambioFreq":
 			int interv = sol.getIntervalo();
 			datos.set(4, interv);
 			break;
