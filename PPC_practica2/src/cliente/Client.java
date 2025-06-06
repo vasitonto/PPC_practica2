@@ -1,68 +1,52 @@
 package cliente;
 
-import java.awt.BorderLayout; 
-import java.awt.EventQueue;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.io.BufferedReader;  
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
-import java.net.SocketAddress;
 import java.net.SocketTimeoutException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultCaret;
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
+import javax.swing.border.TitledBorder;
 
 import Resources.ControlCodes;
 
-import java.awt.GridLayout;
-import java.awt.GridBagLayout;
-import javax.swing.JLabel;
-import java.awt.GridBagConstraints;
-import javax.swing.JComboBox;
-import java.awt.Insets;
-import javax.swing.JButton;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.border.TitledBorder;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.BoxLayout;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import javax.swing.Box;
-import java.awt.Dimension;
-
 public class Client extends JFrame implements Runnable{
 		
+/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 //	private Runnable javi;
 //	private Thread pedro;
 	private static final int portListen = 4999;
@@ -95,7 +79,9 @@ public class Client extends JFrame implements Runnable{
 	private JButton btnStop;
 	private Component rigidArea;
 	private JLabel lblErrorMs;
-	ExecutorService exec = Executors.newFixedThreadPool(2);
+	private ExecutorService exec = Executors.newFixedThreadPool(3);
+	private File logs;
+	private BufferedWriter logWriter;
  
     public Client() {
     	// ################# CODIGO DE SOCKETS ###############
@@ -111,6 +97,18 @@ public class Client extends JFrame implements Runnable{
     			puerto2++;
     		}
     	}
+    	
+    	// ################ CODIGO DE LOGS ###############
+		try {
+			logs = new File("./logs/log.txt");
+			logWriter = new BufferedWriter(new FileWriter("./logs/logs.txt", false));
+		}
+		catch(NullPointerException e) {
+			e.printStackTrace();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
     	
     	// ################# CODIGO DE GUI ###############
     	consola = new JFrame("Consola Cliente"); // Creamos la ventana
@@ -168,6 +166,11 @@ public class Client extends JFrame implements Runnable{
     		@Override
     		public void actionPerformed(ActionEvent e) {
     			textAreaSalida.append("Adiós... :)");
+    			try {
+					logWriter.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
     			try {
     				Thread.sleep(1000);
     			} catch (InterruptedException b) {
@@ -309,11 +312,13 @@ public class Client extends JFrame implements Runnable{
 	    			DatagramPacket pak = new DatagramPacket(buf, buf.length);
 	    			socketListen.receive(pak);
 	    			String msg = new String(pak.getData(), 0, pak.getLength());
-	    			if(msg.startsWith("<")) {
-	    				textAreaSalida.append(ClientParser.parsearPaqueteXML(msg));
-	    			}
-	    			else
-	    				textAreaSalida.append(ClientParser.parsearPaqueteJSON(msg));
+	    			String datos = "";
+	    			if(msg.startsWith("<")) 
+	    				datos = ClientParser.parsearPaqueteXML(msg);
+	    			else datos = ClientParser.parsearPaqueteJSON(msg);
+
+	    			textAreaSalida.append(datos);
+    				logWriter.write(datos);
 	    			
 	    			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
 	//			} 
