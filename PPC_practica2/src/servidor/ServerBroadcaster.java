@@ -16,7 +16,7 @@ public class ServerBroadcaster extends Thread{
 	private DatagramSocket socket;
 	private byte[] buf = new byte[4096];
 	
-// 	posicion 0: id del servidor
+	// 	posicion 0: id del servidor
 	// posicion 1: tipo del servidor [0: agua, 1: viento, 2: precipitaciones]
 	// posicion 2: formato de mensajes [0: xml, 1: json]
 	// posicion 3: 1/0 si está a 0 envia mensajes, si está a 0 no

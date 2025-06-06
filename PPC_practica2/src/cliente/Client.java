@@ -18,7 +18,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -47,12 +51,9 @@ public class Client extends JFrame implements Runnable{
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-//	private Runnable javi;
-//	private Thread pedro;
 	private static final int portListen = 4999;
 	private static final int portCtrl = 5999;
 	private static final int[] serverPorts = {4446, 4447, 4448};
-	//TODO quitar esto para sacar el puerto de los mensajes
 	private static final String grupoMulticast = "224.48.75.1";
 	private MulticastSocket socketListen; // socket para escuchar broadcasts
 	private DatagramSocket socketCtrl; // socket para enviar msg de control y recibirlos
@@ -100,8 +101,13 @@ public class Client extends JFrame implements Runnable{
     	
     	// ################ CODIGO DE LOGS ###############
 		try {
-			logs = new File("./logs/log.txt");
-			logWriter = new BufferedWriter(new FileWriter("./logs/logs.txt", false));
+			LocalDateTime ahora = LocalDateTime.now();
+	        DateTimeFormatter formato = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+	        String nombreLog = ahora.format(formato);
+
+			new File("./logs").mkdirs();
+			logs = new File("logs/log" + nombreLog + ".txt");
+			logWriter = new BufferedWriter(new FileWriter(logs));
 		}
 		catch(NullPointerException e) {
 			e.printStackTrace();
@@ -165,14 +171,13 @@ public class Client extends JFrame implements Runnable{
     	btnSalir.addActionListener(new ActionListener() {
     		@Override
     		public void actionPerformed(ActionEvent e) {
-    			textAreaSalida.append("Adiós... :)");
     			try {
+    				exec.shutdown(); 
 					logWriter.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				} catch (IOException e1) {}
+    			
     			try {
-    				Thread.sleep(1000);
+    				Thread.sleep(500);
     			} catch (InterruptedException b) {
     				b.printStackTrace();
     			}
@@ -317,10 +322,7 @@ public class Client extends JFrame implements Runnable{
 	    				datos = ClientParser.parsearPaqueteXML(msg);
 	    			else datos = ClientParser.parsearPaqueteJSON(msg);
 
-	    			textAreaSalida.append(datos);
-    				logWriter.write(datos);
-	    			
-	    			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
+	    			printea(datos);
 	//			} 
 	    	}
 	    	catch (IOException e) {
@@ -348,24 +350,33 @@ public class Client extends JFrame implements Runnable{
     	}
     	else bufResp = ClientParser.creaControl(codigo, 0).getBytes();
     	
-		DatagramPacket resp;
+		DatagramPacket resp = new DatagramPacket(bufResp, serverSelection);
 		try {
 			socketCtrl.setSoTimeout(5000);
-			
-			textAreaSalida.append("enviando control: " + codigo + " al " + (String) comboBox.getSelectedItem() + "\n");
 			resp = new DatagramPacket(bufResp, bufResp.length, InetAddress.getLocalHost(), serverPorts[serverSelection]);
-			socketCtrl.send(resp); 
-			byte[] buf = new byte[256];
-			DatagramPacket ack = new DatagramPacket(buf, buf.length);
-			socketCtrl.receive(ack);
-			String ackStr = new String(ack.getData(), 0, ack.getLength());
-			
-			SwingUtilities.invokeLater(() ->textAreaSalida.append(ackStr + "\n"));
-			
-		} catch(SocketTimeoutException sockEx) {
-			SwingUtilities.invokeLater(() ->textAreaSalida.append("No se ha recibido confirmación del servidor...\n\n"));
-		} catch (IOException e) {
+		} catch (SocketException e1) {
+			e1.printStackTrace();
+		} catch (UnknownHostException e) {
 			e.printStackTrace();
+		}
+		printea("CONTROL: enviando " + codigo + " al " + (String) comboBox.getSelectedItem() + "\n");
+		for(int i = 0; i < 3; i++) {
+			if (i > 0) SwingUtilities.invokeLater(() ->printea("CONTROL: Reintentando enviar mensaje de control...\n\n"));
+			try {
+				socketCtrl.send(resp); 
+				byte[] buf = new byte[256];
+				DatagramPacket ack = new DatagramPacket(buf, buf.length);
+				socketCtrl.receive(ack);
+				String ackStr = new String(ack.getData(), 0, ack.getLength());
+				
+				SwingUtilities.invokeLater(() ->printea("CONTROL: " + ackStr + "\n\n"));
+				return;
+			} catch(SocketTimeoutException sockEx) {
+				SwingUtilities.invokeLater(() ->printea("CONTROL: No se ha recibido confirmación del servidor. \n\n"));
+				continue;
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 	}
     
@@ -375,6 +386,17 @@ public class Client extends JFrame implements Runnable{
 		
 	}
     
+    private void printea(String texto) {
+    	textAreaSalida.append(texto);
+		try {
+			logWriter.write(texto);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
+    }
+    
     public void run() {    	
     	try {
 			socketListen.joinGroup(BCADDR, NetworkInterface.getByName(grupoMulticast));
@@ -383,63 +405,5 @@ public class Client extends JFrame implements Runnable{
 		}
     	exec.submit(() -> recibePaquete());
     }
-    
-    
-    	// esto ahora va en clientParser
-//    public void parsearPaquete(String msg) {
-//    	
-//		try {
-//			Document reportDoc = ClientParser.loadXMLFromString(msg);
-//			
-//			Element root = reportDoc.getDocumentElement();                
-//			// accedemos a los atribs. del nodo raíz
-//			String servername = root.getAttribute("servername");
-//			String formato = root.getAttribute("formato");
-//			String tipo = root.getAttribute("tipo");
-//			
-//			textAreaSalida.append(servername + " [formato: " + formato + ", datos: "+ tipo + "]: ");
-//			NodeList datosList = reportDoc.getElementsByTagName("datos");
-//			Node datosNode = datosList.item(0);
-//			NodeList listaValores= ((Element) datosNode).getElementsByTagName(tipo);
-//			Node nodoValores = listaValores.item(0);
-//			// según del tipo que sea el mensaje lo deberemos parsear de una forma u otra
-//			switch(tipo) {
-//			case "agua":
-//				// obtenemos el elemento "datos"
-//				
-//				// obtenemos los elementos dentro de "agua"
-//				
-//				String temperaturaAgua = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
-//				String nivel = ((Element) nodoValores).getElementsByTagName("nivel").item(0).getTextContent();
-//				String ph = ((Element) nodoValores).getElementsByTagName("ph").item(0).getTextContent();
-//				textAreaSalida.append("temperatura: " + temperaturaAgua + "ºC, nivel: " + nivel + "cm, ph: " + ph + "\n");
-//				break;
-//			
-//			case "aire":				
-//				// obtenemos los elementos para "viento"	
-//				String temperaturaViento = ((Element) nodoValores).getElementsByTagName("temperatura").item(0).getTextContent();
-//				String humedad = ((Element) nodoValores).getElementsByTagName("humedad").item(0).getTextContent();
-//				String direccion = ((Element) nodoValores).getElementsByTagName("direccion").item(0).getTextContent();
-//				String velocidad = ((Element) nodoValores).getElementsByTagName("velocidad").item(0).getTextContent();
-//				textAreaSalida.append("temperatura: " + temperaturaViento + "ºC, humedad: " + humedad 
-//						+ "%, direccion: " + direccion + ", velocidad: " + velocidad + "km/h\n");
-//				break;
-//			
-//			case "precipitacion":
-//				String tipoPrecip = ((Element) nodoValores).getElementsByTagName("tipo").item(0).getTextContent();
-//				String intensidad = ((Element) nodoValores).getElementsByTagName("intensidad").item(0).getTextContent();
-//				String cantidad = ((Element) nodoValores).getElementsByTagName("cantidad").item(0).getTextContent();
-//				textAreaSalida.append("tipo: " + tipoPrecip + ", intensidad: " 
-//						+ intensidad + ", cantidad: " + cantidad + "mm\n" );
-//				break;
-//			
-//			default: break;
-//			}
-//			textAreaSalida.setCaretPosition(textAreaSalida.getDocument().getLength());
-//			
-//		} catch (ParserConfigurationException | SAXException | IOException e) {
-//			e.printStackTrace();
-//		}
-//    }
 }
-
+    

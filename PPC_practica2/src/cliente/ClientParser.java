@@ -121,9 +121,9 @@ public static String parsearPaqueteXML(String msg) {
                 		+ humedad + "%, dirección: " + direccion + "\n\n";
                 break;
 
-            case "precipitaciones":
+            case "precipitacion":
             	String tipoPrecip = valores.get("tipo").getAsString();
-            	int intensidad = valores.get("intensidad").getAsInt();
+            	String intensidad = valores.get("intensidad").getAsString();
                 int cantidad = valores.get("cantidad").getAsInt();
                 texto +=  "tipo: " + tipoPrecip + "intensidad: " + intensidad + "cantidad: " + cantidad + "mm\n\n";
                 break;

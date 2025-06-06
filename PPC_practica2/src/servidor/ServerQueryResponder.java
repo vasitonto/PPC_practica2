@@ -38,7 +38,7 @@ public class ServerQueryResponder extends Thread {
 				byte[] buf2 = new byte[256];
 				buf2 = ackString.getBytes();
 				DatagramPacket ack = new DatagramPacket(buf2, buf2.length, returnAddr);
-				socket.send(ack);
+//				socket.send(ack);
 			}
 			catch(IOException e) {
 				e.printStackTrace();
